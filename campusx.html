@@ -1,0 +1,2205 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CampusX — JIS Group Student Social Network</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --x-bg: #000000;
+  --x-surface: #0f0f0f;
+  --x-border: #2f3336;
+  --x-text: #e7e9ea;
+  --x-muted: #71767b;
+  --x-blue: #1d9bf0;
+  --x-blue-hover: #1a8cd8;
+  --x-green: #00ba7c;
+  --x-red: #f4212e;
+  --x-gold: #ffd700;
+  --x-purple: #7856ff;
+  --sidebar-w: 240px;
+  --right-w: 320px;
+}
+body { background: var(--x-bg); color: var(--x-text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+.app { display: flex; min-height: 100vh; max-width: 1200px; margin: 0 auto; }
+
+/* ── SIDEBAR ── */
+.sidebar { width: var(--sidebar-w); position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 8px 12px; border-right: 1px solid var(--x-border); flex-shrink: 0; display: flex; flex-direction: column; }
+.logo { display: flex; align-items: center; gap: 8px; padding: 12px 8px; margin-bottom: 4px; cursor: pointer; }
+.logo-icon { width: 36px; height: 36px; background: var(--x-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #fff; letter-spacing: -1px; }
+.logo-text { font-size: 22px; font-weight: 800; color: var(--x-text); letter-spacing: -0.5px; }
+.logo-text span { color: var(--x-blue); }
+.nav-item { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 9999px; cursor: pointer; font-size: 17px; font-weight: 400; color: var(--x-text); transition: background 0.15s; margin-bottom: 2px; white-space: nowrap; }
+.nav-item:hover { background: #1e1e1e; }
+.nav-item.active { font-weight: 700; }
+.nav-icon { font-size: 22px; width: 26px; text-align: center; }
+.nav-badge { background: var(--x-blue); color: #fff; font-size: 11px; border-radius: 9999px; padding: 1px 6px; margin-left: auto; font-weight: 700; }
+.post-btn { background: var(--x-blue); color: #fff; border: none; border-radius: 9999px; padding: 14px 0; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; transition: background 0.15s; }
+.post-btn:hover { background: var(--x-blue-hover); }
+.sidebar-user { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 9999px; cursor: pointer; margin-top: auto; }
+.sidebar-user:hover { background: #1e1e1e; }
+
+/* ── AVATARS ── */
+.avatar { border-radius: 50%; flex-shrink: 0; }
+.av-sm { width: 40px; height: 40px; }
+.av-xs { width: 34px; height: 34px; }
+.av-placeholder { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; }
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-handle { font-size: 13px; color: var(--x-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── MAIN FEED ── */
+.main-feed { flex: 1; border-right: 1px solid var(--x-border); min-width: 0; }
+.feed-header { position: sticky; top: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); z-index: 10; border-bottom: 1px solid var(--x-border); }
+.feed-tabs { display: flex; }
+.feed-tab { flex: 1; text-align: center; padding: 16px 0; font-size: 15px; font-weight: 500; color: var(--x-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+.feed-tab.active { color: var(--x-text); border-bottom-color: var(--x-blue); font-weight: 700; }
+.feed-tab:hover:not(.active) { background: #0d0d0d; color: var(--x-text); }
+
+/* ── COMPOSE ── */
+.compose-box { padding: 12px 16px; border-bottom: 1px solid var(--x-border); display: flex; gap: 12px; }
+.compose-input-wrap { flex: 1; }
+.compose-input { background: transparent; border: none; outline: none; color: var(--x-text); font-size: 18px; width: 100%; resize: none; font-family: inherit; min-height: 52px; }
+.compose-input::placeholder { color: var(--x-muted); }
+.compose-toolbar { display: flex; align-items: center; gap: 4px; margin-top: 8px; border-top: 1px solid var(--x-border); padding-top: 10px; }
+.compose-action { background: none; border: none; color: var(--x-blue); font-size: 18px; cursor: pointer; padding: 6px; border-radius: 50%; transition: background 0.15s; }
+.compose-action:hover { background: rgba(29,155,240,0.1); }
+.char-count { font-size: 13px; color: var(--x-muted); margin-left: auto; margin-right: 8px; }
+.submit-btn { background: var(--x-blue); color: #fff; border: none; border-radius: 9999px; padding: 8px 20px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+.submit-btn:hover { background: var(--x-blue-hover); }
+
+/* ── POST CARD ── */
+.post-card { border-bottom: 1px solid var(--x-border); padding: 12px 16px; display: flex; gap: 12px; cursor: pointer; transition: background 0.1s; }
+.post-card:hover { background: #080808; }
+.post-body { flex: 1; min-width: 0; }
+.post-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; flex-wrap: wrap; }
+.post-name { font-size: 15px; font-weight: 700; }
+.post-handle { font-size: 14px; color: var(--x-muted); }
+.post-dot { color: var(--x-muted); font-size: 12px; }
+.post-time { font-size: 14px; color: var(--x-muted); }
+.verified { color: var(--x-blue); font-size: 14px; }
+.institute-badge { background: rgba(29,155,240,0.15); color: var(--x-blue); font-size: 11px; padding: 1px 7px; border-radius: 9999px; font-weight: 600; }
+.post-text { font-size: 15px; line-height: 1.5; margin-bottom: 10px; word-break: break-word; }
+.post-text a { color: var(--x-blue); text-decoration: none; }
+.post-media-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.post-media-item { background: #0d0d0d; border: 1px solid var(--x-border); border-radius: 12px; overflow: hidden; }
+.post-media-item img, .post-media-item video { width: 100%; display: block; max-height: 320px; object-fit: cover; }
+.post-media-item audio { width: 100%; display: block; padding: 10px; background: #0d0d0d; }
+.quote-card { border: 1px solid var(--x-border); border-radius: 12px; padding: 10px; margin-bottom: 10px; background: #090909; }
+.quote-meta { font-size: 13px; color: var(--x-muted); margin-bottom: 6px; }
+.quote-text { font-size: 14px; line-height: 1.4; }
+.compose-media-chip { border: 1px solid var(--x-border); border-radius: 9999px; padding: 4px 10px; font-size: 12px; color: var(--x-muted); background: #0e0e0e; }
+.post-actions { display: flex; align-items: center; margin-top: 4px; }
+.action-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--x-muted); font-size: 13px; cursor: pointer; padding: 6px 10px 6px 0; border-radius: 9999px; transition: all 0.15s; margin-right: 6px; }
+.action-btn:hover { color: var(--x-blue); }
+.action-btn.repost:hover { color: var(--x-green); }
+.action-btn.like:hover { color: var(--x-red); }
+.action-btn .icon { font-size: 17px; }
+.action-btn.liked .icon, .action-btn.liked span { color: var(--x-red); }
+.action-btn.reposted .icon, .action-btn.reposted span { color: var(--x-green); }
+
+/* ── RIGHT PANEL ── */
+.right-panel { width: var(--right-w); flex-shrink: 0; padding: 12px 16px; }
+.search-bar { background: #202327; border: 1px solid transparent; border-radius: 9999px; display: flex; align-items: center; gap: 10px; padding: 10px 16px; margin-bottom: 16px; }
+.search-bar:focus-within { background: var(--x-bg); border-color: var(--x-blue); }
+.search-bar input { background: none; border: none; outline: none; color: var(--x-text); font-size: 15px; flex: 1; }
+.search-bar input::placeholder { color: var(--x-muted); }
+.panel-card { background: #16181c; border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+.panel-title { font-size: 18px; font-weight: 800; margin-bottom: 14px; }
+.trend-item { padding: 10px 0; border-bottom: 1px solid var(--x-border); cursor: pointer; }
+.trend-item:last-child { border-bottom: none; }
+.trend-tag { font-size: 12px; color: var(--x-muted); }
+.trend-name { font-size: 14px; font-weight: 700; margin: 2px 0; }
+.trend-posts { font-size: 12px; color: var(--x-muted); }
+.suggest-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--x-border); }
+.suggest-item:last-child { border-bottom: none; }
+.follow-btn { margin-left: auto; background: var(--x-text); color: #000; border: none; border-radius: 9999px; padding: 6px 16px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s; }
+.follow-btn:hover { background: #ccc; }
+.follow-btn.following { background: transparent; color: var(--x-text); border: 1px solid var(--x-border); }
+
+.x-page-shell { padding: 16px; }
+.x-page-hero {
+  border: 1px solid var(--x-border);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 14px;
+  background:
+    radial-gradient(circle at 16% 12%, rgba(29,155,240,0.28) 0%, rgba(29,155,240,0) 56%),
+    radial-gradient(circle at 86% 88%, rgba(120,86,255,0.26) 0%, rgba(120,86,255,0) 52%),
+    #0d1014;
+}
+.x-page-hero h2 { font-size: 24px; line-height: 1.2; margin-bottom: 8px; }
+.x-page-hero p { color: var(--x-muted); font-size: 14px; line-height: 1.5; }
+.x-pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.x-pill {
+  border: 1px solid var(--x-border);
+  background: #101419;
+  color: var(--x-text);
+  border-radius: 9999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.x-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.x-card {
+  border: 1px solid var(--x-border);
+  background: #0b0d11;
+  border-radius: 14px;
+  padding: 14px;
+}
+.x-card-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.x-card-copy { font-size: 13px; color: var(--x-muted); line-height: 1.5; margin-bottom: 10px; }
+.x-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--x-muted); }
+.x-card-btn {
+  border: 1px solid var(--x-border);
+  border-radius: 9999px;
+  background: #12161d;
+  color: var(--x-text);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.x-card-btn:hover { background: #1a2030; border-color: #2b3f63; }
+.x-card-btn.active { background: rgba(29,155,240,0.17); border-color: rgba(29,155,240,0.5); color: var(--x-blue); }
+
+@media (max-width: 820px) {
+  .x-cards-grid { grid-template-columns: 1fr; }
+}
+
+/* ── MODALS ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.modal { background: #000; border: 1px solid var(--x-border); border-radius: 16px; width: 600px; max-width: 96vw; max-height: 90vh; overflow-y: auto; }
+.modal-header { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--x-border); position: sticky; top: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); z-index: 2; }
+.modal-close { background: none; border: none; color: var(--x-text); font-size: 20px; cursor: pointer; padding: 6px; border-radius: 50%; transition: background 0.15s; }
+.modal-close:hover { background: #1e1e1e; }
+
+/* ── LOGIN ── */
+.login-screen { min-height: 100vh; background: #000; display: flex; align-items: center; justify-content: center; }
+.login-box { width: 400px; padding: 40px 32px; }
+.login-logo { text-align: center; margin-bottom: 24px; }
+.login-logo .licon { width: 52px; height: 52px; background: var(--x-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; color: #fff; margin: 0 auto 8px; }
+.login-logo h1 { font-size: 28px; font-weight: 800; }
+.login-logo h1 span { color: var(--x-blue); }
+.login-logo p { color: var(--x-muted); font-size: 14px; margin-top: 4px; }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 13px; color: var(--x-muted); margin-bottom: 6px; display: block; }
+.form-input { width: 100%; background: transparent; border: 1px solid var(--x-border); border-radius: 6px; padding: 12px 14px; color: var(--x-text); font-size: 15px; outline: none; transition: border 0.15s; font-family: inherit; }
+.form-input:focus { border-color: var(--x-blue); }
+.form-select { width: 100%; background: #0f0f0f; border: 1px solid var(--x-border); border-radius: 6px; padding: 12px 14px; color: var(--x-text); font-size: 15px; outline: none; transition: border 0.15s; font-family: inherit; cursor: pointer; }
+.form-select:focus { border-color: var(--x-blue); }
+.login-btn { width: 100%; background: var(--x-blue); color: #fff; border: none; border-radius: 9999px; padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background 0.15s; }
+.login-btn:hover { background: var(--x-blue-hover); }
+.login-divider { text-align: center; color: var(--x-muted); font-size: 14px; margin: 16px 0; position: relative; }
+.login-divider::before, .login-divider::after { content: ''; position: absolute; top: 50%; width: 38%; height: 1px; background: var(--x-border); }
+.login-divider::before { left: 0; }
+.login-divider::after { right: 0; }
+.login-switch { text-align: center; font-size: 14px; color: var(--x-muted); margin-top: 20px; }
+.login-switch a { color: var(--x-blue); text-decoration: none; cursor: pointer; font-weight: 600; }
+.receipt-note { background: rgba(29,155,240,0.1); border: 1px solid rgba(29,155,240,0.3); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px; color: var(--x-blue); }
+.upload-area { border: 2px dashed var(--x-border); border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; color: var(--x-muted); font-size: 14px; transition: border 0.15s; }
+.upload-area:hover { border-color: var(--x-blue); color: var(--x-blue); }
+
+/* ── CHAT ── */
+.chat-list { width: 340px; border-right: 1px solid var(--x-border); display: flex; flex-direction: column; flex-shrink: 0; }
+.chat-header { padding: 16px; border-bottom: 1px solid var(--x-border); font-size: 20px; font-weight: 800; }
+.chat-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid #111; }
+.chat-item:hover, .chat-item.active { background: #111; }
+.chat-preview { flex: 1; min-width: 0; }
+.chat-preview-name { font-size: 15px; font-weight: 700; }
+.chat-preview-msg { font-size: 14px; color: var(--x-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-time { font-size: 12px; color: var(--x-muted); }
+.chat-unread { background: var(--x-blue); color: #fff; font-size: 11px; border-radius: 9999px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.chat-window { flex: 1; display: flex; flex-direction: column; }
+.chat-win-header { padding: 14px 20px; border-bottom: 1px solid var(--x-border); display: flex; align-items: center; gap: 12px; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; min-height: 300px; }
+.msg { max-width: 70%; }
+.msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.45; }
+.msg.sent { align-self: flex-end; }
+.msg.sent .msg-bubble { background: var(--x-blue); color: #fff; border-bottom-right-radius: 4px; }
+.msg.recv .msg-bubble { background: #202327; color: var(--x-text); border-bottom-left-radius: 4px; }
+.msg-time { font-size: 11px; color: var(--x-muted); margin-top: 3px; text-align: right; }
+.chat-input-row { padding: 12px 20px; border-top: 1px solid var(--x-border); display: flex; align-items: center; gap: 10px; }
+.chat-input { flex: 1; background: #202327; border: 1px solid transparent; border-radius: 9999px; padding: 10px 18px; color: var(--x-text); font-size: 15px; outline: none; font-family: inherit; transition: border 0.15s; }
+.chat-input:focus { border-color: var(--x-blue); }
+.send-btn { background: var(--x-blue); border: none; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 16px; transition: background 0.15s; flex-shrink: 0; }
+.send-btn:hover { background: var(--x-blue-hover); }
+
+/* ── PROFILE ── */
+.profile-cover { height: 170px; background: linear-gradient(135deg, #1d9bf0 0%, #7856ff 100%); border-radius: 12px; margin-bottom: -40px; background-size: cover; background-position: center; background-repeat: no-repeat; }
+.profile-av { border: 4px solid #000; margin-left: 16px; width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #1d9bf0, #7856ff); display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 800; color: #fff; position: relative; z-index: 1; background-size: cover; background-position: center; background-repeat: no-repeat; }
+.profile-edit-btn { float: right; background: transparent; border: 1px solid var(--x-border); color: var(--x-text); border-radius: 9999px; padding: 8px 18px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+.profile-edit-btn:hover { background: #111; }
+.profile-stat { font-size: 14px; color: var(--x-muted); cursor: pointer; }
+.profile-stat strong { color: var(--x-text); font-weight: 700; }
+.profile-stat:hover { text-decoration: underline; }
+
+.edit-profile-modal { width: 640px; }
+.edit-profile-header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.edit-profile-save { border: none; border-radius: 9999px; background: var(--x-text); color: #000; padding: 7px 16px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.edit-profile-save[disabled] { opacity: 0.6; cursor: wait; }
+.edit-profile-body { padding: 0 0 18px; }
+.edit-banner-picker { height: 170px; margin: 0; border-radius: 0; border-bottom: 1px solid var(--x-border); position: relative; cursor: pointer; background: linear-gradient(135deg, #1d9bf0 0%, #7856ff 100%); background-size: cover; background-position: center; background-repeat: no-repeat; }
+.edit-banner-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 700; color: #fff; background: rgba(0, 0, 0, 0.38); opacity: 0; transition: opacity 0.15s ease; }
+.edit-banner-picker:hover .edit-banner-overlay { opacity: 1; }
+.edit-avatar-row { display: flex; align-items: center; gap: 12px; padding: 0 18px; margin-top: -42px; }
+.edit-avatar-picker { width: 84px; height: 84px; border-radius: 50%; border: 4px solid #000; background: linear-gradient(135deg, #1d9bf0, #7856ff); background-size: cover; background-position: center; background-repeat: no-repeat; color: #fff; font-size: 30px; font-weight: 800; cursor: pointer; }
+.edit-avatar-photo-btn { border: 1px solid var(--x-border); background: #0f0f0f; color: var(--x-text); border-radius: 9999px; padding: 8px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.edit-avatar-photo-btn:hover { background: #171717; }
+.edit-profile-fields { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.edit-profile-label { font-size: 12px; color: var(--x-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+.edit-profile-input, .edit-profile-textarea { width: 100%; border: 1px solid var(--x-border); background: #050505; color: var(--x-text); border-radius: 10px; padding: 11px 12px; font-family: inherit; font-size: 15px; outline: none; }
+.edit-profile-input:focus, .edit-profile-textarea:focus { border-color: var(--x-blue); }
+.edit-profile-textarea { min-height: 110px; resize: vertical; }
+
+/* ── NOTIFICATIONS ── */
+.notif-item { display: flex; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--x-border); cursor: pointer; }
+.notif-item:hover { background: #080808; }
+.notif-icon { font-size: 22px; width: 36px; text-align: center; flex-shrink: 0; }
+.notif-text { font-size: 15px; line-height: 1.5; }
+.notif-text strong { font-weight: 700; }
+.notif-time { color: var(--x-muted); font-size: 13px; margin-top: 2px; }
+
+/* ── EMOJI PICKER ── */
+.emoji-picker { background: #1a1a1a; border: 1px solid var(--x-border); border-radius: 12px; padding: 10px; display: flex; flex-wrap: wrap; gap: 6px; width: 260px; }
+.emoji-picker span { font-size: 22px; cursor: pointer; padding: 4px; border-radius: 6px; transition: background 0.1s; }
+.emoji-picker span:hover { background: #333; }
+
+/* ── RECEIPT MODAL ── */
+.receipt-field { margin-bottom: 12px; }
+.receipt-field label { font-size: 12px; color: var(--x-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.receipt-field input { width: 100%; background: transparent; border: 1px solid var(--x-border); border-radius: 8px; padding: 10px 12px; color: var(--x-text); font-size: 14px; outline: none; transition: border 0.15s; font-family: inherit; }
+.receipt-field input:focus { border-color: var(--x-blue); }
+.receipt-img-preview { width: 100%; height: 140px; background: #111; border: 1px solid var(--x-border); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--x-muted); font-size: 14px; margin-top: 6px; cursor: pointer; gap: 6px; }
+.submit-receipt { width: 100%; background: var(--x-blue); color: #fff; border: none; border-radius: 9999px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 16px; transition: background 0.15s; }
+.submit-receipt:hover { background: var(--x-blue-hover); }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--x-blue); color: #fff; padding: 12px 24px; border-radius: 9999px; font-size: 14px; font-weight: 600; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; }
+
+/* ── UTILITIES ── */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════════ -->
+<div id="login-screen" class="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="licon">CX</div>
+      <h1>Campus<span>X</span></h1>
+      <p>JIS Group Student Social Network</p>
+    </div>
+    <div class="receipt-note">
+      🎓 Exclusive for JIS Group students. Verify with your fee receipt to join.
+    </div>
+    <div class="form-group">
+      <label class="form-label">Select Your Institute</label>
+      <select class="form-select" id="institute-select">
+        <option value="">-- Choose your institute --</option>
+        <option>JIS College of Engineering, Kalyani</option>
+        <option>JIS University, Agarpara</option>
+        <option>Calcutta Institute of Technology, Uluberia</option>
+        <option>Camellia Institute of Technology</option>
+        <option>Camellia School of Business Management</option>
+        <option>JIS Institute of Advanced Studies</option>
+        <option>Guru Nanak Institute of Technology</option>
+        <option>Guru Nanak Institute of Pharmaceutical Science</option>
+        <option>Techno International Batanagar</option>
+        <option>Techno International New Town</option>
+        <option>Techno Main Salt Lake</option>
+        <option>Techno India Group Public School</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input class="form-input" type="text" placeholder="Your full name" id="login-name" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Student ID / Roll Number</label>
+      <input class="form-input" type="text" placeholder="e.g. JISCE2024001" id="login-roll" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" placeholder="student@institute.edu" id="login-email" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" placeholder="Create a password" id="login-password" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fee Receipt — Upload for Verification</label>
+      <div class="upload-area" id="login-upload-area">
+        📎 Tap to upload fee receipt (PDF / Image)
+        <br><span style="font-size:12px;margin-top:4px;display:block;">Required for account verification · PDF, JPG, PNG</span>
+      </div>
+      <input id="login-receipt-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" class="hidden" />
+    </div>
+    <button class="login-btn" id="register-btn">Create Account &amp; Verify</button>
+    <div class="login-divider">or</div>
+    <button class="login-btn" id="signin-btn" style="background:transparent;border:1px solid var(--x-border);color:var(--x-text);">Sign in to existing account</button>
+    <div class="login-switch">
+      Need help? <a>Contact your institute admin</a>
+    </div>
+</div>
+</div>
+
+<div id="signin-screen" class="login-screen hidden">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="licon">CX</div>
+      <h1>Campus<span>X</span></h1>
+      <p>Sign in to your student account</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email or Username</label>
+      <input class="form-input" type="text" placeholder="admin@jisphere.app or @username" id="direct-signin-email" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" placeholder="Enter your password" id="direct-signin-password" />
+    </div>
+    <button class="login-btn" id="direct-signin-btn">Sign In</button>
+    <div class="login-switch">
+      New here? <a onclick="switchAuthScreen('register')">Create account</a>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════════ -->
+<div id="main-app" class="hidden">
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="logo" onclick="showView('feed')">
+        <div class="logo-icon">CX</div>
+        <span class="logo-text">Campus<span>X</span></span>
+      </div>
+      <nav>
+        <div class="nav-item active" id="nav-feed" onclick="showView('feed')">
+          <span class="nav-icon">🏠</span> Home
+        </div>
+        <div class="nav-item" id="nav-explore" onclick="showView('explore')">
+          <span class="nav-icon">🔍</span> Explore
+        </div>
+        <div class="nav-item" id="nav-notif" onclick="showView('notif')">
+          <span class="nav-icon">🔔</span> Notifications
+          <span class="nav-badge" id="notif-badge">3</span>
+        </div>
+        <div class="nav-item" id="nav-chat" onclick="showView('chat')">
+          <span class="nav-icon">💬</span> Messages
+          <span class="nav-badge" id="chat-badge">0</span>
+        </div>
+        <div class="nav-item" id="nav-communities" onclick="showView('communities')">
+          <span class="nav-icon">👥</span> Communities
+        </div>
+        <div class="nav-item" id="nav-lists" onclick="showView('lists')">
+          <span class="nav-icon">📋</span> Lists
+        </div>
+        <div class="nav-item" id="nav-premium" onclick="showView('premium')">
+          <span class="nav-icon">⭐</span> Premium
+        </div>
+        <div class="nav-item" id="nav-profile" onclick="showView('profile')">
+          <span class="nav-icon">👤</span> Profile
+        </div>
+        <div class="nav-item" onclick="openReceiptModal()">
+          <span class="nav-icon">🪪</span> Verification
+        </div>
+        <div class="nav-item" id="nav-events" onclick="showView('events')">
+          <span class="nav-icon">🎓</span> Events
+        </div>
+        <div class="nav-item" id="nav-bookmarks" onclick="showView('bookmarks')">
+          <span class="nav-icon">🔖</span> Bookmarks
+        </div>
+      </nav>
+      <button class="post-btn" onclick="openComposeModal()">+ Post</button>
+      <div class="sidebar-user" onclick="showView('profile')">
+        <div class="av-placeholder av-sm avatar" id="sidebar-av" style="font-size:15px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;">RS</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-display-name">Rahul Sen</div>
+          <div class="user-handle" id="sidebar-handle">@rahul_jisce</div>
+        </div>
+        <span style="color:var(--x-muted);font-size:16px;">···</span>
+      </div>
+    </aside>
+
+    <!-- ── FEED VIEW ── -->
+    <main class="main-feed" id="view-feed">
+      <div class="feed-header">
+        <div class="feed-tabs">
+          <div class="feed-tab active" onclick="switchFeedTab(this,'for-you')">For You</div>
+          <div class="feed-tab" onclick="switchFeedTab(this,'following')">Following</div>
+          <div class="feed-tab" onclick="switchFeedTab(this,'campus')">Campus</div>
+          <div class="feed-tab" onclick="switchFeedTab(this,'all-jis')">All JIS</div>
+        </div>
+      </div>
+      <div class="compose-box">
+        <div class="av-placeholder av-sm avatar" id="compose-av" style="font-size:15px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;">RS</div>
+        <div class="compose-input-wrap">
+          <textarea class="compose-input" placeholder="What's happening on campus?" id="compose-inline" oninput="updateChar()" maxlength="280"></textarea>
+          <div class="compose-toolbar" id="inline-toolbar" style="display:none;">
+            <button class="compose-action" onclick="toggleEmojiPicker()" title="Emoji">😊</button>
+            <button class="compose-action" title="Image/Video/Music" onclick="openComposerMediaPicker('inline')">🖼️</button>
+            <button class="compose-action" title="GIF" onclick="openComposerMediaPicker('inline')">GIF</button>
+            <button class="compose-action" title="Poll template" onclick="insertPollTemplate('inline')">📊</button>
+            <span class="char-count" id="char-count">280</span>
+            <button class="submit-btn" onclick="postTweet()">Post</button>
+          </div>
+          <input id="inline-media-input" type="file" accept="image/*,video/*,audio/*,.pdf" multiple class="hidden" />
+          <div id="inline-media-preview" style="display:none;gap:8px;flex-wrap:wrap;padding-top:8px;"></div>
+          <div id="emoji-picker" class="emoji-picker hidden" style="margin-top:8px;">
+            <span onclick="insertEmoji('😂')">😂</span><span onclick="insertEmoji('❤️')">❤️</span>
+            <span onclick="insertEmoji('🔥')">🔥</span><span onclick="insertEmoji('🎓')">🎓</span>
+            <span onclick="insertEmoji('📚')">📚</span><span onclick="insertEmoji('🤔')">🤔</span>
+            <span onclick="insertEmoji('👏')">👏</span><span onclick="insertEmoji('😍')">😍</span>
+            <span onclick="insertEmoji('💪')">💪</span><span onclick="insertEmoji('🙏')">🙏</span>
+            <span onclick="insertEmoji('😭')">😭</span><span onclick="insertEmoji('✨')">✨</span>
+            <span onclick="insertEmoji('🎉')">🎉</span><span onclick="insertEmoji('😎')">😎</span>
+            <span onclick="insertEmoji('🤝')">🤝</span><span onclick="insertEmoji('💡')">💡</span>
+            <span onclick="insertEmoji('🚀')">🚀</span><span onclick="insertEmoji('📝')">📝</span>
+            <span onclick="insertEmoji('🏆')">🏆</span><span onclick="insertEmoji('🌟')">🌟</span>
+          </div>
+        </div>
+      </div>
+      <div id="feed-posts"></div>
+    </main>
+
+    <!-- ── EXPLORE VIEW ── -->
+    <div id="view-explore" class="main-feed hidden">
+      <div class="feed-header" style="padding:16px;border-bottom:1px solid var(--x-border);">
+        <div style="background:#202327;border-radius:9999px;display:flex;align-items:center;gap:10px;padding:10px 16px;">
+          <span>🔍</span>
+          <input id="explore-search-input" style="background:none;border:none;outline:none;color:var(--x-text);font-size:15px;flex:1;font-family:inherit;" placeholder="Search CampusX..." />
+        </div>
+      </div>
+      <div style="margin:16px;">
+        <div class="panel-card" id="explore-search-results" style="display:none;"></div>
+        <div class="panel-card">
+          <div class="panel-title">📈 Trending on CampusX</div>
+          <div id="explore-trend-list">
+            <div class="trend-item"><div class="trend-tag">Education · Trending</div><div class="trend-name">#ExamSeason2025</div><div class="trend-posts">4,218 posts</div></div>
+            <div class="trend-item"><div class="trend-tag">JIS University</div><div class="trend-name">#JISFest2025</div><div class="trend-posts">2,891 posts</div></div>
+            <div class="trend-item"><div class="trend-tag">Campus Life</div><div class="trend-name">#CampusXLaunch</div><div class="trend-posts">1,540 posts</div></div>
+            <div class="trend-item"><div class="trend-tag">Tech · Trending</div><div class="trend-name">#HackathonJISCE</div><div class="trend-posts">983 posts</div></div>
+            <div class="trend-item"><div class="trend-tag">Sports</div><div class="trend-name">#JISCricketLeague</div><div class="trend-posts">762 posts</div></div>
+            <div class="trend-item"><div class="trend-tag">Academics</div><div class="trend-name">#ResultDay</div><div class="trend-posts">631 posts</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── NOTIFICATIONS VIEW ── -->
+    <div id="view-notif" class="main-feed hidden">
+      <div class="feed-header" style="padding:16px;border-bottom:1px solid var(--x-border);font-size:20px;font-weight:800;">
+        Notifications <span id="notif-unread-text" style="font-size:13px;color:var(--x-muted);font-weight:500;margin-left:8px;"></span>
+      </div>
+      <div id="notif-list"></div>
+    </div>
+
+    <!-- ── CHAT VIEW ── -->
+    <div id="view-chat" class="main-feed hidden" style="padding:0;">
+      <div style="display:flex;height:100vh;">
+        <div class="chat-list" id="chat-list">
+          <div class="chat-header">Messages</div>
+          <div id="chat-list-items"></div>
+        </div>
+        <div class="chat-window">
+          <div class="chat-win-header">
+            <div class="av-placeholder av-sm avatar" id="chat-av" style="font-size:15px;background:linear-gradient(135deg,#f4212e,#ff6b9d);border-radius:50%;">PS</div>
+            <div>
+              <div style="font-size:16px;font-weight:700;" id="chat-name">Priya Sharma</div>
+              <div style="font-size:13px;color:var(--x-muted);" id="chat-sub">No conversation selected</div>
+            </div>
+          </div>
+          <div class="chat-messages" id="chat-messages"></div>
+          <div class="chat-input-row">
+            <button class="compose-action" style="font-size:20px;" onclick="insertChatEmoji()">😊</button>
+            <button class="compose-action" style="font-size:20px;" onclick="uploadChatAttachment()">📎</button>
+            <input id="chat-attachment-input" type="file" accept="image/*,video/*,audio/*,.pdf" class="hidden" />
+            <input class="chat-input" placeholder="Start a message..." id="chat-input-box" onkeydown="sendChatMsg(event)" />
+            <button class="send-btn" onclick="sendChatMsgBtn()">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROFILE VIEW ── -->
+    <div id="view-profile" class="main-feed hidden">
+      <div class="feed-header" style="padding:12px 16px;border-bottom:1px solid var(--x-border);display:flex;align-items:center;gap:16px;">
+        <span style="font-size:20px;font-weight:800;" id="profile-header-name">Rahul Sen</span>
+        <span style="color:var(--x-muted);font-size:14px;" id="profile-header-post-count">0 posts</span>
+      </div>
+      <div style="padding:16px;">
+        <div class="profile-cover" id="profile-cover"></div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;padding-right:16px;">
+          <div class="profile-av" id="profile-av-initials">RS</div>
+          <div style="display:flex;gap:10px;">
+            <button class="profile-edit-btn hidden" id="profile-message-btn" onclick="startChatFromProfile()">Message</button>
+            <button class="profile-edit-btn" id="profile-action-btn" onclick="handleProfileAction()">Edit profile</button>
+          </div>
+        </div>
+        <div style="padding:12px 0 0;">
+          <div style="font-size:20px;font-weight:800;" id="profile-display-name">Rahul Sen</div>
+          <div style="color:var(--x-muted);font-size:14px;margin:2px 0 8px;" id="profile-display-handle">@rahul_jisce · <span class="institute-badge">JISCE</span></div>
+          <div style="font-size:15px;line-height:1.5;margin-bottom:10px;" id="profile-bio">No bio yet.</div>
+          <div style="display:flex;gap:20px;">
+            <span class="profile-stat"><strong id="profile-post-count">0</strong> Posts</span>
+            <span class="profile-stat"><strong id="profile-following-count">0</strong> Following</span>
+            <span class="profile-stat"><strong id="profile-follower-count">0</strong> Followers</span>
+          </div>
+        </div>
+      </div>
+      <div class="feed-tabs" style="border-bottom:1px solid var(--x-border);">
+        <div class="feed-tab active" id="profile-tab-posts" onclick="setProfileTab('posts',this)">Posts</div>
+        <div class="feed-tab" id="profile-tab-replies" onclick="setProfileTab('replies',this)">Replies</div>
+        <div class="feed-tab" id="profile-tab-likes" onclick="setProfileTab('likes',this)">Likes</div>
+        <div class="feed-tab" id="profile-tab-media" onclick="setProfileTab('media',this)">Media</div>
+      </div>
+      <div id="profile-posts"></div>
+    </div>
+
+    <div id="view-bookmarks" class="main-feed hidden">
+      <div class="feed-header" style="padding:16px;border-bottom:1px solid var(--x-border);font-size:20px;font-weight:800;">
+        Bookmarks
+      </div>
+      <div id="bookmark-list"></div>
+    </div>
+
+    <div id="view-events" class="main-feed hidden">
+      <div class="feed-header" style="padding:16px;border-bottom:1px solid var(--x-border);font-size:20px;font-weight:800;">
+        Campus Events
+      </div>
+      <div id="events-list" style="padding:16px;"></div>
+    </div>
+
+    <div id="view-communities" class="main-feed hidden">
+      <div class="feed-header" style="padding:16px;border-bottom:1px solid var(--x-border);font-size:20px;font-weight:800;">
+        Communities
+      </div>
+      <div class="x-page-shell">
+        <div class="x-page-hero">
+          <h2>Find your campus circle</h2>
+          <p>Join focused student communities for clubs, projects, placements, and institute-specific updates.</p>
+          <div class="x-pill-row">
+            <span class="x-pill">Institute Clubs</span>
+            <span class="x-pill">Tech & Hackathons</span>
+            <span class="x-pill">Placements</span>
+            <span class="x-pill">Fest Updates</span>
+          </div>
+        </div>
+        <div id="community-cards" class="x-cards-grid"></div>
+      </div>
+    </div>
+
+    <div id="view-lists" class="main-feed hidden">
+      <div class="feed-header" style="padding:16px;border-bottom:1px solid var(--x-border);font-size:20px;font-weight:800;">
+        Lists
+      </div>
+      <div class="x-page-shell">
+        <div class="x-page-hero">
+          <h2>Curate your timeline</h2>
+          <p>Create topic lists and follow public lists to see only what matters to you, just like X list feeds.</p>
+          <div class="x-pill-row">
+            <span class="x-pill">Academic Alerts</span>
+            <span class="x-pill">Placement News</span>
+            <span class="x-pill">Coding Threads</span>
+            <span class="x-pill">Campus Memes</span>
+          </div>
+        </div>
+        <div id="list-cards" class="x-cards-grid"></div>
+      </div>
+    </div>
+
+    <div id="view-premium" class="main-feed hidden">
+      <div class="feed-header" style="padding:16px;border-bottom:1px solid var(--x-border);font-size:20px;font-weight:800;">
+        Premium
+      </div>
+      <div class="x-page-shell">
+        <div class="x-page-hero">
+          <h2>CampusX Premium</h2>
+          <p>Get enhanced visibility, longer posts, and advanced personalization for power users.</p>
+          <div class="x-pill-row">
+            <span class="x-pill">Long Posts</span>
+            <span class="x-pill">Priority Replies</span>
+            <span class="x-pill">Profile Highlight</span>
+            <span class="x-pill">Faster Support</span>
+          </div>
+        </div>
+        <div id="premium-cards" class="x-cards-grid"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <aside class="right-panel" id="right-panel">
+      <div class="search-bar">
+        <span>🔍</span>
+        <input id="right-search-input" placeholder="Search CampusX" />
+      </div>
+      <div class="panel-card">
+        <div class="panel-title">📈 Trending</div>
+        <div id="right-trend-list">
+          <div class="trend-item"><div class="trend-tag">Trending at JIS</div><div class="trend-name">#ExamSeason2025</div><div class="trend-posts">4.2K posts</div></div>
+          <div class="trend-item"><div class="trend-tag">Events</div><div class="trend-name">#JISFest2025</div><div class="trend-posts">2.8K posts</div></div>
+          <div class="trend-item"><div class="trend-tag">Tech</div><div class="trend-name">#HackathonJISCE</div><div class="trend-posts">983 posts</div></div>
+          <div class="trend-item"><div class="trend-tag">Viral</div><div class="trend-name">#CampusXLaunch</div><div class="trend-posts">1.5K posts</div></div>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title">👥 Who to follow</div>
+        <div id="who-to-follow-list"></div>
+      </div>
+      <div style="font-size:12px;color:var(--x-muted);padding:0 4px;line-height:1.8;">
+        Terms · Privacy · Cookies · Accessibility<br>CampusX · JIS Group © 2025
+      </div>
+    </aside>
+
+  </div><!-- end .app -->
+</div><!-- end #main-app -->
+
+<!-- ════════════════════════════════════════════
+     COMPOSE MODAL
+════════════════════════════════════════════ -->
+<div id="compose-modal" class="hidden">
+  <div class="modal-overlay" onclick="closeComposeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <button class="modal-close" onclick="closeComposeModal()">✕</button>
+        <span style="font-size:16px;font-weight:700;" id="compose-modal-title">New Post</span>
+      </div>
+      <div class="compose-box" style="border:none;padding:20px;">
+        <div class="av-placeholder av-sm avatar" id="modal-av" style="font-size:15px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;">RS</div>
+        <div class="compose-input-wrap">
+          <div id="compose-context-note" class="hidden" style="font-size:12px;color:var(--x-blue);margin-bottom:8px;"></div>
+          <textarea class="compose-input" placeholder="What's happening on campus?" id="compose-modal-input" oninput="updateModalChar()" maxlength="280" style="min-height:100px;"></textarea>
+          <div class="compose-toolbar">
+            <button class="compose-action" onclick="toggleModalEmoji()">😊</button>
+            <button class="compose-action" onclick="openComposerMediaPicker('modal')">🖼️</button>
+            <button class="compose-action" onclick="openComposerMediaPicker('modal')">GIF</button>
+            <button class="compose-action" onclick="insertPollTemplate('modal')">📊</button>
+            <span class="char-count" id="modal-char-count">280</span>
+            <button class="submit-btn" onclick="postFromModal()">Post</button>
+          </div>
+          <input id="modal-media-input" type="file" accept="image/*,video/*,audio/*,.pdf" multiple class="hidden" />
+          <div id="modal-media-preview" style="display:none;gap:8px;flex-wrap:wrap;padding-top:8px;"></div>
+          <div id="modal-emoji-picker" class="emoji-picker hidden" style="margin-top:8px;">
+            <span onclick="insertModalEmoji('😂')">😂</span><span onclick="insertModalEmoji('❤️')">❤️</span>
+            <span onclick="insertModalEmoji('🔥')">🔥</span><span onclick="insertModalEmoji('🎓')">🎓</span>
+            <span onclick="insertModalEmoji('📚')">📚</span><span onclick="insertModalEmoji('🤔')">🤔</span>
+            <span onclick="insertModalEmoji('👏')">👏</span><span onclick="insertModalEmoji('😍')">😍</span>
+            <span onclick="insertModalEmoji('💪')">💪</span><span onclick="insertModalEmoji('🙏')">🙏</span>
+            <span onclick="insertModalEmoji('😭')">😭</span><span onclick="insertModalEmoji('✨')">✨</span>
+            <span onclick="insertModalEmoji('🎉')">🎉</span><span onclick="insertModalEmoji('😎')">😎</span>
+            <span onclick="insertModalEmoji('🤝')">🤝</span><span onclick="insertModalEmoji('💡')">💡</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     RECEIPT VERIFICATION MODAL
+════════════════════════════════════════════ -->
+<div id="receipt-modal" class="hidden">
+  <div class="modal-overlay" onclick="closeReceiptModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <button class="modal-close" onclick="closeReceiptModal()">✕</button>
+        <span style="font-size:16px;font-weight:700;">🪪 Fee Receipt Verification</span>
+      </div>
+      <div style="padding:24px;">
+        <p style="color:var(--x-muted);font-size:14px;margin-bottom:16px;">Upload your fee receipt to verify your student status and get a ✅ verified badge on CampusX.</p>
+        <div class="receipt-field"><label>Student Name</label><input id="receipt-student-name" type="text" placeholder="As on fee receipt" /></div>
+        <div class="receipt-field"><label>Roll Number</label><input id="receipt-roll-number" type="text" placeholder="e.g. 21CSE001" /></div>
+        <div class="receipt-field"><label>Institute</label><input id="receipt-institute" type="text" placeholder="e.g. JIS College of Engineering" /></div>
+        <div class="receipt-field"><label>Academic Year</label><input id="receipt-year" type="text" placeholder="e.g. 2024-25" /></div>
+        <div class="receipt-field"><label>Receipt / Transaction Number</label><input id="receipt-number" type="text" placeholder="Receipt ID or Transaction ID" /></div>
+        <div class="receipt-field">
+          <label>Upload Fee Receipt</label>
+          <div class="receipt-img-preview" id="receipt-upload-preview">
+            <span style="font-size:28px;">📎</span>
+            <span>Tap to upload receipt</span>
+            <span style="font-size:12px;color:var(--x-muted);">PDF, JPG, or PNG · Max 5MB</span>
+          </div>
+          <input id="receipt-modal-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" class="hidden" />
+        </div>
+        <button class="submit-receipt" onclick="submitReceipt()">Submit for Verification</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="repost-action-modal" class="hidden">
+  <div class="modal-overlay" onclick="closeRepostAction(event)">
+    <div class="modal" style="width:360px;max-width:92vw;" onclick="event.stopPropagation()">
+      <div style="padding:18px;">
+        <div style="font-size:16px;font-weight:700;margin-bottom:12px;">Repost</div>
+        <button class="submit-btn" id="repost-main-action-btn" style="width:100%;margin-bottom:10px;" onclick="doRepostAction('repost')">Repost</button>
+        <button class="profile-edit-btn" style="float:none;width:100%;margin-top:0;margin-bottom:10px;" onclick="doRepostAction('quote')">Quote Repost</button>
+        <button class="profile-edit-btn" style="float:none;width:100%;margin-top:0;" onclick="closeRepostAction()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="edit-profile-modal" class="hidden">
+  <div class="modal-overlay" onclick="closeEditProfileModal(event)">
+    <div class="modal edit-profile-modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <button class="modal-close" onclick="closeEditProfileModal()">✕</button>
+        <span style="font-size:18px;font-weight:800;">Edit profile</span>
+        <div class="edit-profile-header-right">
+          <button id="edit-profile-save-btn" class="edit-profile-save" onclick="saveProfileEdit()">Save</button>
+        </div>
+      </div>
+      <div class="edit-profile-body">
+        <div class="edit-banner-picker" id="edit-banner-picker" onclick="openFilePickerById('edit-banner-input', event)">
+          <div class="edit-banner-overlay">📷 Change banner</div>
+        </div>
+        <div class="edit-avatar-row">
+          <div class="edit-avatar-picker av-placeholder" id="edit-avatar-picker" onclick="openFilePickerById('edit-avatar-input', event)">RS</div>
+          <button class="edit-avatar-photo-btn" onclick="openFilePickerById('edit-avatar-input', event)">Change photo</button>
+        </div>
+        <input id="edit-avatar-input" type="file" accept="image/*" class="hidden" />
+        <input id="edit-banner-input" type="file" accept="image/*" class="hidden" />
+        <div class="edit-profile-fields">
+          <div>
+            <label class="edit-profile-label">Name</label>
+            <input id="edit-profile-name" class="edit-profile-input" type="text" maxlength="80" placeholder="Your name" />
+          </div>
+          <div>
+            <label class="edit-profile-label">Bio</label>
+            <textarea id="edit-profile-bio" class="edit-profile-textarea" maxlength="280" placeholder="Tell people about yourself"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+// ── DATA ──────────────────────────────────────
+const defaultPosts = [
+  {
+    id: 1, name: 'Priya Sharma', handle: '@priya_jisce', institute: 'JISCE',
+    time: '2m', verified: true,
+    text: 'Just submitted my final year project! 🎓 Four years of hard work, late nights, and too much coffee finally paid off. CampusX fam — we made it! #FinalYear #JISCElife',
+    likes: 48, reposts: 12, replies: 9, liked: false, reposted: false,
+    avatar: 'PS', avatarColor: 'linear-gradient(135deg,#f4212e,#ff6b9d)'
+  },
+  {
+    id: 2, name: 'Arnab Das', handle: '@arnab_jisu', institute: 'JIS Uni',
+    time: '45m', verified: false,
+    text: 'JIS University Hackathon registrations are OPEN 🚀 48-hour coding marathon, prizes worth ₹50,000+! Form your team now and register by Dec 10. Who\'s in? 👇 #HackathonJISU #CampusX',
+    likes: 127, reposts: 34, replies: 21, liked: true, reposted: false,
+    avatar: 'AD', avatarColor: 'linear-gradient(135deg,#00ba7c,#1d9bf0)'
+  },
+  {
+    id: 3, name: 'Sneha Roy', handle: '@sneha_cit', institute: 'CIT',
+    time: '2h', verified: false,
+    text: 'Hot take: the canteen at CIT has the best aloo paratha in all of JIS Group 🤌 Sorry not sorry #CITlife #CanteenDebate',
+    likes: 89, reposts: 22, replies: 47, liked: false, reposted: true,
+    avatar: 'SR', avatarColor: 'linear-gradient(135deg,#7856ff,#f4212e)'
+  },
+  {
+    id: 4, name: 'Campus Admin', handle: '@campusx_admin', institute: 'JIS Group',
+    time: '3h', verified: true,
+    text: '🎉 Welcome to CampusX — the official social network for all JIS Group students!\n\nPost, connect, chat, and collaborate with students across all institutes. Get verified with your fee receipt to unlock all features. ✅ #CampusXLaunch',
+    likes: 342, reposts: 98, replies: 56, liked: false, reposted: false,
+    avatar: 'CA', avatarColor: 'var(--x-blue)'
+  },
+  {
+    id: 5, name: 'Md. Iqbal', handle: '@iqbal_jisu', institute: 'JIS Uni',
+    time: '5h', verified: false,
+    text: 'Library extended hours UPDATE: Now open till 10 PM on weekdays 📚 Finally! Exam season just got more manageable. Thanks student council for pushing this through! #ResultDay #JISUni',
+    likes: 203, reposts: 67, replies: 18, liked: true, reposted: false,
+    avatar: 'MI', avatarColor: 'linear-gradient(135deg,#7856ff,#1d9bf0)'
+  }
+];
+
+let feedPosts = [...defaultPosts];
+let currentUser = { id: '', name: 'Rahul Sen', handle: '@rahul_jisce', initials: 'RS', institute: 'JISCE', role: 'STUDENT', avatarUrl: '', bannerUrl: '' };
+let authState = {
+  accessToken: localStorage.getItem('cx_access_token') || '',
+  refreshToken: localStorage.getItem('cx_refresh_token') || ''
+};
+let currentInstituteId = '';
+let instituteOptions = [];
+let loginReceiptFile = null;
+let modalReceiptFile = null;
+let loginBusy = false;
+let receiptBusy = false;
+let filePickerLock = false;
+const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:4000/api' : '/api';
+
+function initialsFromName(name) {
+  return (name || 'JIS Student').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'JS';
+}
+
+function instituteShort(value) {
+  return (value || '').replace(/[,].*/, '').replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 6) || 'JIS';
+}
+
+function safeCssImage(url) {
+  return String(url || '').replace(/"/g, '%22');
+}
+
+function setAvatarVisual(elementId, initials, imageUrl) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  el.textContent = initials || 'JS';
+  if (imageUrl) {
+    el.style.backgroundImage = 'url("' + safeCssImage(imageUrl) + '")';
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+    el.style.backgroundRepeat = 'no-repeat';
+    el.style.color = 'transparent';
+    return;
+  }
+  el.style.backgroundImage = '';
+  el.style.background = 'linear-gradient(135deg,#1d9bf0,#7856ff)';
+  el.style.color = '#fff';
+}
+
+function setBannerVisual(elementId, imageUrl) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  if (imageUrl) {
+    el.style.backgroundImage = 'url("' + safeCssImage(imageUrl) + '")';
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+    el.style.backgroundRepeat = 'no-repeat';
+    return;
+  }
+  el.style.backgroundImage = '';
+  el.style.background = 'linear-gradient(135deg, #1d9bf0 0%, #7856ff 100%)';
+}
+
+function setAuth(accessToken, refreshToken) {
+  authState.accessToken = accessToken || '';
+  authState.refreshToken = refreshToken || '';
+  if (authState.accessToken) localStorage.setItem('cx_access_token', authState.accessToken);
+  else localStorage.removeItem('cx_access_token');
+  if (authState.refreshToken) localStorage.setItem('cx_refresh_token', authState.refreshToken);
+  else localStorage.removeItem('cx_refresh_token');
+}
+
+async function apiRequest(path, options = {}) {
+  const headers = Object.assign({}, options.headers || {});
+  if (!options.body || !(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+  if (authState.accessToken) headers['Authorization'] = 'Bearer ' + authState.accessToken;
+  let resp;
+  try {
+    resp = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+  } catch (_) {
+    throw new Error('Cannot reach server. Open app at http://localhost:4000 after starting backend.');
+  }
+  let data = {};
+  try { data = await resp.json(); } catch (_) {}
+  if (!resp.ok) throw new Error(data.error || ('Request failed (' + resp.status + ')'));
+  return data;
+}
+
+function applyCurrentUserToUI() {
+  document.getElementById('sidebar-display-name').textContent = currentUser.name;
+  document.getElementById('sidebar-handle').textContent = currentUser.handle;
+  const avatar = mediaUrl(currentUser.avatarUrl || '');
+  setAvatarVisual('sidebar-av', currentUser.initials, avatar);
+  setAvatarVisual('compose-av', currentUser.initials, avatar);
+  setAvatarVisual('modal-av', currentUser.initials, avatar);
+  document.getElementById('profile-display-name').textContent = currentUser.name;
+  document.getElementById('profile-header-name').textContent = currentUser.name;
+  setAvatarVisual('profile-av-initials', currentUser.initials, avatar);
+  setBannerVisual('profile-cover', mediaUrl(currentUser.bannerUrl || ''));
+  document.getElementById('profile-display-handle').innerHTML =
+    currentUser.handle + ' · <span class="institute-badge">' + currentUser.institute + '</span>';
+}
+
+async function loadInstitutes() {
+  const select = document.getElementById('institute-select');
+  if (!select) return;
+  try {
+    const result = await apiRequest('/institutes', { method: 'GET', headers: { Authorization: '' } });
+    instituteOptions = Array.isArray(result.institutes) ? result.institutes : [];
+    if (!instituteOptions.length) return;
+    select.innerHTML = '<option value="">-- Choose your institute --</option>';
+    instituteOptions.forEach(inst => {
+      const option = document.createElement('option');
+      option.value = inst.id;
+      option.textContent = inst.name;
+      option.dataset.short = inst.shortCode || instituteShort(inst.name);
+      select.appendChild(option);
+    });
+  } catch (_) {
+    // Keep static fallback options if API is unavailable.
+  }
+}
+
+function openFilePickerById(inputId, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (filePickerLock) return;
+  const fileInput = document.getElementById(inputId);
+  if (!fileInput) return;
+  filePickerLock = true;
+  fileInput.click();
+  setTimeout(function () { filePickerLock = false; }, 500);
+}
+
+function triggerLoginReceiptUpload(event) {
+  openFilePickerById('login-receipt-input', event);
+}
+
+function triggerModalReceiptUpload(event) {
+  openFilePickerById('receipt-modal-file', event);
+}
+
+async function loadFeedFromApi(tab) {
+  if (!authState.accessToken) return;
+  try {
+    const result = await apiRequest('/posts/feed?tab=' + encodeURIComponent(tab || 'for-you'));
+    if (Array.isArray(result.posts) && result.posts.length) {
+      feedPosts = result.posts;
+      renderFeed();
+    }
+  } catch (_) {
+    // Keep local feed fallback.
+  }
+}
+
+// ── RENDER POSTS ──────────────────────────────
+function renderPost(p) {
+  return `
+  <div class="post-card" id="post-${p.id}">
+    <div class="av-placeholder av-sm avatar" style="font-size:13px;font-weight:700;background:${p.avatarColor};border-radius:50%;">${p.avatar}</div>
+    <div class="post-body">
+      <div class="post-meta">
+        <span class="post-name">${p.name}</span>
+        ${p.verified ? '<span class="verified">✅</span>' : ''}
+        <span class="institute-badge">${p.institute}</span>
+        <span class="post-dot">·</span>
+        <span class="post-time">${p.time}</span>
+      </div>
+      <div class="post-text">${p.text.replace(/\n/g,'<br>').replace(/(#\w+)/g,'<a style="color:var(--x-blue);text-decoration:none;">$1</a>')}</div>
+      <div class="post-actions">
+        <button class="action-btn reply" onclick="showToast('💬 Reply feature coming soon!')">
+          <span class="icon">💬</span><span>${p.replies}</span>
+        </button>
+        <button class="action-btn repost ${p.reposted ? 'reposted' : ''}" onclick="toggleRepost(${p.id},this)">
+          <span class="icon">🔁</span><span id="rp-${p.id}">${p.reposts}</span>
+        </button>
+        <button class="action-btn like ${p.liked ? 'liked' : ''}" onclick="toggleLike(${p.id},this)">
+          <span class="icon">${p.liked ? '❤️' : '🤍'}</span><span id="lk-${p.id}">${p.likes}</span>
+        </button>
+        <button class="action-btn share" onclick="showToast('🔗 Link copied to clipboard!')">
+          <span class="icon">↗</span>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderFeed() {
+  const c = document.getElementById('feed-posts');
+  if (c) c.innerHTML = feedPosts.map(renderPost).join('');
+}
+
+function renderProfilePosts() {
+  const c = document.getElementById('profile-posts');
+  if (!c) return;
+  const myPosts = [
+    {
+      id: 101, name: currentUser.name, handle: currentUser.handle,
+      institute: currentUser.institute, time: '1h', verified: false,
+      text: 'Just discovered CampusX and already loving the campus vibe here 🔥 This is going to be the go-to app for all JIS students! #CampusXLaunch',
+      likes: 23, reposts: 5, replies: 4, liked: false, reposted: false,
+      avatar: currentUser.initials, avatarColor: 'linear-gradient(135deg,#1d9bf0,#7856ff)'
+    },
+    {
+      id: 102, name: currentUser.name, handle: currentUser.handle,
+      institute: currentUser.institute, time: '4h', verified: false,
+      text: 'Exam prep mode activated 📚 Who else is surviving on maggi and black coffee right now? #ExamSeason2025 #JISCElife',
+      likes: 67, reposts: 14, replies: 11, liked: true, reposted: false,
+      avatar: currentUser.initials, avatarColor: 'linear-gradient(135deg,#1d9bf0,#7856ff)'
+    }
+  ];
+  c.innerHTML = myPosts.map(renderPost).join('');
+}
+
+// ── INTERACTIONS ──────────────────────────────
+function toggleLike(id, btn) {
+  const p = feedPosts.find(x => x.id === id);
+  if (!p) return;
+  p.liked = !p.liked;
+  p.likes += p.liked ? 1 : -1;
+  document.getElementById('lk-' + id).textContent = p.likes;
+  btn.querySelector('.icon').textContent = p.liked ? '❤️' : '🤍';
+  btn.classList.toggle('liked', p.liked);
+}
+
+function toggleRepost(id, btn) {
+  const p = feedPosts.find(x => x.id === id);
+  if (!p) return;
+  p.reposted = !p.reposted;
+  p.reposts += p.reposted ? 1 : -1;
+  document.getElementById('rp-' + id).textContent = p.reposts;
+  btn.classList.toggle('reposted', p.reposted);
+  showToast(p.reposted ? '🔁 Reposted!' : 'Repost removed');
+}
+
+function toggleFollow(btn) {
+  const f = btn.classList.contains('following');
+  btn.classList.toggle('following', !f);
+  btn.textContent = f ? 'Follow' : 'Following';
+  showToast(f ? 'Unfollowed' : '✅ Now following!');
+}
+
+// ── NAVIGATION ────────────────────────────────
+function showView(view) {
+  ['feed','explore','notif','chat','profile','bookmarks','events','communities','lists','premium'].forEach(v => {
+    const el = document.getElementById('view-' + v);
+    if (el) { el.classList.add('hidden'); el.style.removeProperty('display'); }
+    const nav = document.getElementById('nav-' + v);
+    if (nav) nav.classList.remove('active');
+  });
+  const target = document.getElementById('view-' + view);
+  if (target) {
+    target.classList.remove('hidden');
+    if (view === 'chat') target.style.display = 'block';
+  }
+  const nav = document.getElementById('nav-' + view);
+  if (nav) nav.classList.add('active');
+  const rp = document.getElementById('right-panel');
+  if (rp) rp.style.display = (view === 'chat') ? 'none' : '';
+  if (view === 'profile') renderProfilePosts();
+  if (view === 'notif') { document.getElementById('notif-badge').style.display = 'none'; }
+  if (view === 'events') renderEvents();
+  if (view === 'communities') renderCommunitiesPage();
+  if (view === 'lists') renderListsPage();
+  if (view === 'premium') renderPremiumPage();
+}
+
+function switchFeedTab(el, tab) {
+  document.querySelectorAll('.feed-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadFeedFromApi(tab || 'for-you');
+}
+
+// ── LOGIN ─────────────────────────────────────
+function switchAuthScreen(mode) {
+  const registerScreen = document.getElementById('login-screen');
+  const signInScreen = document.getElementById('signin-screen');
+  if (mode === 'signin') {
+    if (registerScreen) registerScreen.classList.add('hidden');
+    if (signInScreen) signInScreen.classList.remove('hidden');
+  } else {
+    if (signInScreen) signInScreen.classList.add('hidden');
+    if (registerScreen) registerScreen.classList.remove('hidden');
+  }
+}
+
+function doDirectSignIn() {
+  const directEmail = document.getElementById('direct-signin-email');
+  const directPassword = document.getElementById('direct-signin-password');
+  const emailInput = document.getElementById('login-email');
+  const passwordInput = document.getElementById('login-password');
+  if (emailInput && directEmail) emailInput.value = directEmail.value;
+  if (passwordInput && directPassword) passwordInput.value = directPassword.value;
+  doLogin('signin');
+}
+
+async function doLogin(mode) {
+  if (loginBusy) return;
+  const loginMode = mode || 'register';
+  const nameEl = document.getElementById('login-name');
+  const rollEl = document.getElementById('login-roll');
+  const emailEl = document.getElementById('login-email');
+  const passEl = document.getElementById('login-password');
+  const directEmailEl = document.getElementById('direct-signin-email');
+  const directPassEl = document.getElementById('direct-signin-password');
+  const selectEl = document.getElementById('institute-select');
+
+  const fullName = (nameEl.value || '').trim();
+  const rollNumber = (rollEl.value || '').trim();
+  const email = ((loginMode === 'signin' && directEmailEl && directEmailEl.value) ? directEmailEl.value : emailEl.value || '').trim();
+  const password = ((loginMode === 'signin' && directPassEl && directPassEl.value) ? directPassEl.value : passEl.value || '').trim();
+  const instituteId = selectEl.value;
+  const instituteText = (selectEl.options[selectEl.selectedIndex] && selectEl.options[selectEl.selectedIndex].textContent) || '';
+
+  if (!email || !password) {
+    showToast('⚠️ Please enter email and password');
+    return;
+  }
+
+  if (loginMode !== 'signin') {
+    if (!instituteId) { showToast('⚠️ Please select your institute'); return; }
+    if (!fullName) { showToast('⚠️ Please enter full name'); return; }
+    if (!rollNumber) { showToast('⚠️ Please enter roll number'); return; }
+  }
+
+  loginBusy = true;
+
+  try {
+    let result;
+
+    if (loginMode === 'signin') {
+      result = await apiRequest('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ emailOrHandle: email, password })
+      });
+    } else {
+      result = await apiRequest('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          fullName,
+          email,
+          password,
+          rollNumber,
+          instituteId
+        })
+      });
+    }
+
+    const profile = result.user || {};
+    const displayName = profile.fullName || fullName || 'JIS Student';
+    const rawHandle = profile.handle || ('@' + displayName.toLowerCase().replace(/\s+/g, '_').slice(0, 14));
+    const handle = rawHandle.startsWith('@') ? rawHandle : ('@' + rawHandle);
+    const instShort = (profile.institute && profile.institute.shortCode) || instituteShort(instituteText || profile.institute?.name || '');
+
+    currentUser = {
+      id: profile.id || '',
+      name: displayName,
+      handle,
+      initials: initialsFromName(displayName),
+      institute: instShort,
+      role: profile.role || 'STUDENT',
+      avatarUrl: profile.avatarUrl || '',
+      bannerUrl: profile.bannerUrl || ''
+    };
+
+    currentInstituteId = (profile.institute && profile.institute.id) || instituteId || '';
+    setAuth(result.accessToken, result.refreshToken);
+    applyCurrentUserToUI();
+
+    document.getElementById('login-screen').classList.add('hidden');
+    const signInScreen = document.getElementById('signin-screen');
+    if (signInScreen) signInScreen.classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    await loadFeedFromApi('for-you');
+    renderFeed();
+    showToast(loginMode === 'signin' ? '✅ Signed in successfully!' : '🎉 Account created successfully!');
+
+    if (loginMode === 'register' && loginReceiptFile && currentInstituteId) {
+      const autoReceiptData = new FormData();
+      autoReceiptData.append('instituteId', currentInstituteId);
+      autoReceiptData.append('academicYear', new Date().getFullYear() + '-' + String(new Date().getFullYear() + 1).slice(2));
+      autoReceiptData.append('receiptNumber', 'AUTO-' + Date.now());
+      autoReceiptData.append('receipt', loginReceiptFile);
+      try {
+        await apiRequest('/verification/submit', {
+          method: 'POST',
+          body: autoReceiptData
+        });
+        showToast('✅ Receipt submitted for verification.');
+      } catch (_) {
+        showToast('⚠️ Account created. Submit receipt from Verification tab.');
+      }
+    }
+  } catch (error) {
+    showToast('❌ ' + (error && error.message ? error.message : 'Login failed'));
+  } finally {
+    loginBusy = false;
+  }
+}
+
+// ── COMPOSE ───────────────────────────────────
+function updateChar() {
+  const v = document.getElementById('compose-inline').value;
+  document.getElementById('char-count').textContent = 280 - v.length;
+  document.getElementById('inline-toolbar').style.display = v.length > 0 ? 'flex' : 'none';
+}
+
+function updateModalChar() {
+  const v = document.getElementById('compose-modal-input').value;
+  document.getElementById('modal-char-count').textContent = 280 - v.length;
+}
+
+function postTweet() {
+  const txt = document.getElementById('compose-inline').value.trim();
+  if (!txt) return;
+  addPost(txt);
+  document.getElementById('compose-inline').value = '';
+  document.getElementById('char-count').textContent = '280';
+  document.getElementById('inline-toolbar').style.display = 'none';
+  document.getElementById('emoji-picker').classList.add('hidden');
+  renderFeed();
+  showToast('✅ Posted!');
+}
+
+function postFromModal() {
+  const txt = document.getElementById('compose-modal-input').value.trim();
+  if (!txt) return;
+  addPost(txt);
+  document.getElementById('compose-modal-input').value = '';
+  document.getElementById('modal-char-count').textContent = '280';
+  document.getElementById('compose-modal').classList.add('hidden');
+  showView('feed');
+  renderFeed();
+  showToast('✅ Posted!');
+}
+
+function addPost(txt) {
+  feedPosts.unshift({
+    id: Date.now(),
+    name: currentUser.name, handle: currentUser.handle,
+    institute: currentUser.institute, time: 'Just now', verified: false,
+    text: txt, likes: 0, reposts: 0, replies: 0,
+    liked: false, reposted: false,
+    avatar: currentUser.initials,
+    avatarColor: 'linear-gradient(135deg,#1d9bf0,#7856ff)'
+  });
+}
+
+// ── EMOJI ─────────────────────────────────────
+function toggleEmojiPicker() { document.getElementById('emoji-picker').classList.toggle('hidden'); }
+function toggleModalEmoji() { document.getElementById('modal-emoji-picker').classList.toggle('hidden'); }
+function insertEmoji(e) {
+  const el = document.getElementById('compose-inline');
+  el.value += e; updateChar();
+  document.getElementById('emoji-picker').classList.add('hidden');
+}
+function insertModalEmoji(e) {
+  const el = document.getElementById('compose-modal-input');
+  el.value += e; updateModalChar();
+  document.getElementById('modal-emoji-picker').classList.add('hidden');
+}
+
+// ── COMPOSE MODAL ─────────────────────────────
+function openComposeModal() { document.getElementById('compose-modal').classList.remove('hidden'); }
+function closeComposeModal(e) {
+  if (!e || e.target.classList.contains('modal-overlay'))
+    document.getElementById('compose-modal').classList.add('hidden');
+}
+
+// ── RECEIPT MODAL ─────────────────────────────
+function openReceiptModal() { document.getElementById('receipt-modal').classList.remove('hidden'); }
+function closeReceiptModal(e) {
+  if (!e || e.target.classList.contains('modal-overlay'))
+    document.getElementById('receipt-modal').classList.add('hidden');
+}
+async function submitReceipt() {
+  if (receiptBusy) return;
+  receiptBusy = true;
+  if (!authState.accessToken) {
+    showToast('⚠️ Please sign in first');
+    receiptBusy = false;
+    return;
+  }
+
+  const fileInput = document.getElementById('receipt-modal-file');
+  const file = (fileInput && fileInput.files && fileInput.files[0]) || modalReceiptFile;
+  if (!file) {
+    showToast('⚠️ Please attach receipt file');
+    receiptBusy = false;
+    return;
+  }
+
+  const name = (document.getElementById('receipt-student-name').value || '').trim();
+  const roll = (document.getElementById('receipt-roll-number').value || '').trim();
+  const year = (document.getElementById('receipt-year').value || '').trim() || (new Date().getFullYear() + '-' + String(new Date().getFullYear() + 1).slice(2));
+  const receiptNo = (document.getElementById('receipt-number').value || '').trim() || ('MANUAL-' + Date.now());
+  const instituteId = currentInstituteId || document.getElementById('institute-select').value;
+
+  if (!instituteId) {
+    showToast('⚠️ Institute missing. Please sign in again.');
+    receiptBusy = false;
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('instituteId', instituteId);
+  formData.append('academicYear', year);
+  formData.append('receiptNumber', receiptNo);
+  formData.append('studentName', name);
+  formData.append('rollNumber', roll);
+  formData.append('receipt', file);
+
+  try {
+    await apiRequest('/verification/submit', {
+      method: 'POST',
+      body: formData
+    });
+    document.getElementById('receipt-modal').classList.add('hidden');
+    showToast('✅ Receipt submitted! Verification within 24 hours.');
+  } catch (error) {
+    showToast('❌ ' + (error && error.message ? error.message : 'Receipt submission failed'));
+  } finally {
+    receiptBusy = false;
+  }
+}
+
+// ── CHAT ──────────────────────────────────────
+function selectChat(name, initials, color, sub, el) {
+  document.getElementById('chat-name').textContent = name;
+  document.getElementById('chat-sub').textContent = sub;
+  const av = document.getElementById('chat-av');
+  av.textContent = initials;
+  av.style.background = color;
+  document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function sendChatMsg(e) { if (e.key === 'Enter') sendChatMsgBtn(); }
+
+function sendChatMsgBtn() {
+  const input = document.getElementById('chat-input-box');
+  const txt = input.value.trim();
+  if (!txt) return;
+  const msgs = document.getElementById('chat-messages');
+  const now = new Date();
+  const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+  const div = document.createElement('div');
+  div.className = 'msg sent';
+  div.innerHTML = `<div class="msg-bubble">${txt}</div><div class="msg-time">${time}</div>`;
+  msgs.appendChild(div);
+  input.value = '';
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function insertChatEmoji() {
+  document.getElementById('chat-input-box').value += '😊';
+}
+
+// ── TOAST ─────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── INIT ──────────────────────────────────────
+document.getElementById('compose-inline').addEventListener('focus', function () {
+  document.getElementById('inline-toolbar').style.display = 'flex';
+});
+
+function updateLoginReceiptSelection(file) {
+  const uploadArea = document.getElementById('login-upload-area');
+  if (!uploadArea) return;
+  if (!file) {
+    uploadArea.innerHTML =
+      '📎 Tap to upload fee receipt (PDF / Image)<br><span style="font-size:12px;margin-top:4px;display:block;">Required for account verification · PDF, JPG, PNG</span>';
+    return;
+  }
+  uploadArea.innerHTML =
+    '✅ Selected: ' + file.name + '<br><span style="font-size:12px;margin-top:4px;display:block;">Tap to change file</span>';
+}
+
+function updateModalReceiptSelection(file) {
+  const preview = document.getElementById('receipt-upload-preview');
+  if (!preview) return;
+  if (!file) {
+    preview.innerHTML =
+      '<span style="font-size:28px;">📎</span><span>Tap to upload receipt</span><span style="font-size:12px;color:var(--x-muted);">PDF, JPG, or PNG · Max 5MB</span>';
+    return;
+  }
+  preview.innerHTML =
+    '<span style="font-size:24px;">✅</span><span style="font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;">' + file.name + '</span><span style="font-size:12px;color:var(--x-muted);">Tap to change file</span>';
+}
+
+const loginReceiptInput = document.getElementById('login-receipt-input');
+if (loginReceiptInput) {
+  loginReceiptInput.addEventListener('change', function (e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    loginReceiptFile = file;
+    updateLoginReceiptSelection(file);
+    showToast('📎 Selected: ' + file.name);
+  });
+}
+
+const modalReceiptInput = document.getElementById('receipt-modal-file');
+if (modalReceiptInput) {
+  modalReceiptInput.addEventListener('change', function (e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    modalReceiptFile = file;
+    updateModalReceiptSelection(file);
+    showToast('📎 Receipt attached: ' + file.name);
+  });
+}
+
+const editAvatarInput = document.getElementById('edit-avatar-input');
+if (editAvatarInput && editAvatarInput.dataset.bindProfileMedia !== '1') {
+  editAvatarInput.addEventListener('change', function (e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setEditProfileImage('avatar', file);
+  });
+  editAvatarInput.dataset.bindProfileMedia = '1';
+}
+
+const editBannerInput = document.getElementById('edit-banner-input');
+if (editBannerInput && editBannerInput.dataset.bindProfileMedia !== '1') {
+  editBannerInput.addEventListener('change', function (e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setEditProfileImage('banner', file);
+  });
+  editBannerInput.dataset.bindProfileMedia = '1';
+}
+
+const editProfileNameInput = document.getElementById('edit-profile-name');
+if (editProfileNameInput && editProfileNameInput.dataset.bindProfileName !== '1') {
+  editProfileNameInput.addEventListener('input', refreshEditProfilePreview);
+  editProfileNameInput.dataset.bindProfileName = '1';
+}
+
+function bindClickOnce(element, key, handler) {
+  if (!element || element.dataset[key] === '1') return;
+  element.addEventListener('click', handler);
+  element.dataset[key] = '1';
+}
+
+const registerBtn = document.getElementById('register-btn');
+bindClickOnce(registerBtn, 'bindRegister', function () { doLogin('register'); });
+const signInBtn = document.getElementById('signin-btn');
+bindClickOnce(signInBtn, 'bindSignin', function () { switchAuthScreen('signin'); });
+const directSignInBtn = document.getElementById('direct-signin-btn');
+bindClickOnce(directSignInBtn, 'bindDirectSignin', doDirectSignIn);
+const directSignInPass = document.getElementById('direct-signin-password');
+if (directSignInPass && directSignInPass.dataset.bindEnter !== '1') {
+  directSignInPass.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') doDirectSignIn();
+  });
+  directSignInPass.dataset.bindEnter = '1';
+}
+const uploadArea = document.getElementById('login-upload-area');
+bindClickOnce(uploadArea, 'bindLoginUpload', triggerLoginReceiptUpload);
+const receiptUploadPreview = document.getElementById('receipt-upload-preview');
+bindClickOnce(receiptUploadPreview, 'bindModalUpload', triggerModalReceiptUpload);
+
+updateLoginReceiptSelection(null);
+updateModalReceiptSelection(null);
+
+// ===== Feature Patch (Part 1) =====
+let inlineMediaFiles = [];
+let modalMediaFiles = [];
+let composeReplyPostId = '';
+let composeQuotePostId = '';
+let currentProfileData = null;
+let profilePostsData = [];
+let bookmarkPostsData = [];
+let currentProfileTab = 'posts';
+let repostActionPostId = '';
+let deleteConfirmPostId = '';
+let deleteConfirmTimer = null;
+let replyDraftPostId = '';
+let replyDraftText = {};
+let replyThreadByPost = {};
+let replyThreadLoading = {};
+const communityState = {};
+const listState = {};
+const premiumState = { plan: 'student_plus' };
+const communityCatalog = [
+  { id: 'jis-tech', title: 'JIS Tech Builders', about: 'Hackathons, code reviews, dev internships, and weekly coding challenges.', members: '8.4K' },
+  { id: 'placements', title: 'Placement Watch', about: 'Off-campus and on-campus updates, interview prep, and referral threads.', members: '12.1K' },
+  { id: 'fest-live', title: 'Fest & Events Live', about: 'Fest schedules, registrations, backstage updates, and photo drops.', members: '5.9K' },
+  { id: 'research-hub', title: 'Research Hub', about: 'Papers, conferences, and collaboration opportunities across JIS institutes.', members: '3.2K' }
+];
+const listCatalog = [
+  { id: 'inst-admin', title: 'Institute Admin Updates', owner: '@campus_admin', about: 'Official circulars, exam notices, and urgent announcements.', followers: '10.7K' },
+  { id: 'coding-creators', title: 'Coding Creators', owner: '@priya_jisce', about: 'Best coding posts, snippets, and project demos from students.', followers: '6.8K' },
+  { id: 'startup-watch', title: 'Startup Watch', owner: '@arnab_jisu', about: 'Campus startup ideas, pitch sessions, and founder stories.', followers: '4.4K' },
+  { id: 'campus-photo', title: 'Campus Photos', owner: '@sneha_cit', about: 'Photography threads, visual stories, and event snapshots.', followers: '7.2K' }
+];
+const premiumCatalog = [
+  { id: 'student_plus', title: 'Student Plus', about: 'Longer posts, profile highlight, and custom app icons.', price: '₹99/month' },
+  { id: 'creator_plus', title: 'Creator Plus', about: 'Analytics, better discovery reach, and engagement insights.', price: '₹199/month' },
+  { id: 'club_pro', title: 'Club Pro', about: 'Best for campus clubs with pinned campaigns and promoted notices.', price: '₹399/month' }
+];
+let editProfileAvatarFile = null;
+let editProfileBannerFile = null;
+let editProfileAvatarPreview = '';
+let editProfileBannerPreview = '';
+let editProfileSaving = false;
+
+function esc(v) { return String(v || '').replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+function mediaUrl(u) { if (!u) return ''; if (/^https?:\/\//.test(u)) return u; return u.startsWith('/') ? u : ('/' + u); }
+function normPost(p) {
+  return Object.assign({
+    id: String(Date.now()), name: 'JIS Student', handle: '@jis_student', institute: 'JIS', instituteName: 'JIS Group',
+    time: 'now', verified: false, text: '', likes: 0, reposts: 0, replies: 0, liked: false, reposted: false, bookmarked: false,
+    avatar: 'JS', avatarColor: 'linear-gradient(135deg,#1d9bf0,#7856ff)', authorId: '', media: [], quotePost: null
+  }, p || {});
+}
+function renderMedia(media) {
+  if (!Array.isArray(media) || !media.length) return '';
+  return '<div class="post-media-grid">' + media.map(function (m) {
+    const t = String(m.type || m.mediaType || 'FILE').toUpperCase();
+    const u = mediaUrl(m.url || '');
+    if (t === 'IMAGE' || t === 'GIF') return '<div class="post-media-item"><img src="' + esc(u) + '" alt="media"></div>';
+    if (t === 'VIDEO') return '<div class="post-media-item"><video controls src="' + esc(u) + '"></video></div>';
+    if (t === 'AUDIO') return '<div class="post-media-item"><audio controls src="' + esc(u) + '"></audio></div>';
+    return '<div class="post-media-item" style="padding:12px;"><a target="_blank" style="color:var(--x-blue);" href="' + esc(u) + '">📄 Open attachment</a></div>';
+  }).join('') + '</div>';
+}
+function renderQuote(quote) {
+  if (!quote) return '';
+  return '<div class="quote-card"><div class="quote-meta">' + esc(quote.name) + ' · ' + esc(quote.handle) + '</div><div class="quote-text">' + esc(quote.text || '') + '</div>' + renderMedia(quote.media || []) + '</div>';
+}
+function renderReplyThread(postId) {
+  const key = String(postId);
+  if (replyThreadLoading[key]) {
+    return '<div style="padding:10px 4px;color:var(--x-muted);font-size:13px;">Loading comments...</div>';
+  }
+  const list = Array.isArray(replyThreadByPost[key]) ? replyThreadByPost[key] : [];
+  if (!list.length) {
+    return '<div style="padding:10px 4px;color:var(--x-muted);font-size:13px;">No comments yet. Be the first to comment.</div>';
+  }
+  return list.map(function (raw) {
+    const c = normPost(raw);
+    return '<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #141414;">' +
+      '<div class="av-placeholder av-xs avatar" style="font-size:11px;font-weight:700;background:' + esc(c.avatarColor || 'linear-gradient(135deg,#1d9bf0,#7856ff)') + ';border-radius:50%;">' + esc(c.avatar || 'JS') + '</div>' +
+      '<div style="flex:1;min-width:0;">' +
+      '<div style="font-size:13px;"><strong>' + esc(c.name || 'Student') + '</strong> <span style="color:var(--x-muted);">' + esc(c.handle || '') + ' · ' + esc(c.time || '') + '</span></div>' +
+      '<div style="font-size:14px;line-height:1.45;word-break:break-word;">' + esc(c.text || '').replace(/\n/g, '<br>') + '</div>' +
+      '</div></div>';
+  }).join('');
+}
+function renderReplyBox(postId) {
+  if (String(replyDraftPostId) !== String(postId)) return '';
+  const v = esc(replyDraftText[postId] || '');
+  const threadHtml = renderReplyThread(postId);
+  return '<div style="margin-top:10px;border:1px solid var(--x-border);border-radius:12px;padding:10px;background:#0a0a0a;">' +
+    '<div style="max-height:280px;overflow-y:auto;padding-right:2px;">' + threadHtml + '</div>' +
+    '<div style="height:1px;background:#1a1a1a;margin:8px 0;"></div>' +
+    '<textarea id="reply-box-' + esc(postId) + '" class="compose-input" style="min-height:66px;font-size:15px;" placeholder="Write your comment..." oninput="updateReplyDraft(\'' + esc(postId) + '\',this.value)">' + v + '</textarea>' +
+    '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">' +
+    '<button class="profile-edit-btn" style="float:none;margin-top:0;" onclick="cancelInlineReply()">Cancel</button>' +
+    '<button class="submit-btn" onclick="submitInlineReply(\'' + esc(postId) + '\')">Reply</button>' +
+    '</div></div>';
+}
+
+renderPost = function (raw) {
+  const p = normPost(raw);
+  const click = p.authorId ? 'onclick="openProfile(\'' + esc(p.authorId) + '\')"' : '';
+  const userRole = String((currentUser && currentUser.role) || '').toUpperCase();
+  const canDelete = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+  const deleteBtn = canDelete
+    ? '<button class="action-btn" style="color:var(--x-red);" onclick="deletePost(\'' + esc(p.id) + '\')"><span class="icon">🗑️</span></button>'
+    : '';
+  return '<div class="post-card">' +
+    '<div class="av-placeholder av-sm avatar" style="font-size:13px;font-weight:700;background:' + esc(p.avatarColor) + ';border-radius:50%;cursor:pointer;" ' + click + '>' + esc(p.avatar) + '</div>' +
+    '<div class="post-body">' +
+    '<div class="post-meta"><span class="post-name" style="cursor:pointer;" ' + click + '>' + esc(p.name) + '</span>' + (p.verified ? '<span class="verified">✅</span>' : '') +
+    '<span class="post-handle" style="cursor:pointer;" ' + click + '>' + esc(p.handle) + '</span><span class="institute-badge">' + esc(p.institute) + '</span><span class="post-dot">·</span><span class="post-time">' + esc(p.time) + '</span></div>' +
+    '<div class="post-text">' + esc(p.text).replace(/\n/g, '<br>').replace(/(#[A-Za-z0-9_]+)/g, '<span style="color:var(--x-blue);">$1</span>') + '</div>' +
+    renderQuote(p.quotePost) + renderMedia(p.media) +
+    '<div class="post-actions">' +
+    '<button class="action-btn reply" onclick="replyToPost(\'' + esc(p.id) + '\')"><span class="icon">💬</span><span>' + Number(p.replies || 0) + '</span></button>' +
+    '<button class="action-btn repost ' + (p.reposted ? 'reposted' : '') + '" onclick="toggleRepost(\'' + esc(p.id) + '\')"><span class="icon">🔁</span><span>' + Number(p.reposts || 0) + '</span></button>' +
+    '<button class="action-btn like ' + (p.liked ? 'liked' : '') + '" onclick="toggleLike(\'' + esc(p.id) + '\')"><span class="icon">' + (p.liked ? '❤️' : '🤍') + '</span><span>' + Number(p.likes || 0) + '</span></button>' +
+    '<button class="action-btn" style="color:' + (p.bookmarked ? 'var(--x-blue)' : 'var(--x-muted)') + ';" onclick="toggleBookmark(\'' + esc(p.id) + '\')"><span class="icon">🔖</span></button>' +
+    '<button class="action-btn share" onclick="sharePost(\'' + esc(p.id) + '\')"><span class="icon">↗</span></button>' +
+    deleteBtn +
+    '</div>' +
+    renderReplyBox(p.id) +
+    '</div></div>';
+};
+
+renderFeed = function () {
+  const c = document.getElementById('feed-posts');
+  if (!c) return;
+  if (!feedPosts.length) { c.innerHTML = '<div style="padding:24px;color:var(--x-muted);">No posts yet.</div>'; return; }
+  c.innerHTML = feedPosts.map(renderPost).join('');
+};
+
+renderProfilePosts = function () {
+  const c = document.getElementById('profile-posts');
+  if (!c) return;
+  const list = profilePostsData.length ? profilePostsData : [];
+  const emptyLabel = currentProfileTab === 'replies' ? 'No replies yet.' : currentProfileTab === 'likes' ? 'No liked posts yet.' : currentProfileTab === 'media' ? 'No media posts yet.' : 'No posts yet.';
+  c.innerHTML = list.length ? list.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">' + emptyLabel + '</div>';
+};
+
+function openComposerMediaPicker(mode) { openFilePickerById(mode === 'modal' ? 'modal-media-input' : 'inline-media-input'); }
+function removeComposerMedia(mode, idx) {
+  if (mode === 'modal') modalMediaFiles = modalMediaFiles.filter(function (_, i) { return i !== idx; });
+  else inlineMediaFiles = inlineMediaFiles.filter(function (_, i) { return i !== idx; });
+  renderComposerMediaPreview(mode);
+}
+function renderComposerMediaPreview(mode) {
+  const files = mode === 'modal' ? modalMediaFiles : inlineMediaFiles;
+  const el = document.getElementById(mode === 'modal' ? 'modal-media-preview' : 'inline-media-preview');
+  if (!el) return;
+  if (!files.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'flex';
+  el.innerHTML = files.map(function (f, i) { return '<span class="compose-media-chip">' + esc(f.name) + ' <span style="cursor:pointer;color:var(--x-blue);" onclick="removeComposerMedia(\'' + mode + '\',' + i + ')">✕</span></span>'; }).join('');
+}
+function insertPollTemplate(mode) {
+  const el = document.getElementById(mode === 'modal' ? 'compose-modal-input' : 'compose-inline');
+  if (!el) return;
+  const extra = '\n\nPoll:\n1) Option A\n2) Option B\nVote in replies 👇';
+  if (el.value.length + extra.length > 280) { showToast('⚠️ Not enough characters'); return; }
+  el.value += extra;
+  if (mode === 'modal') updateModalChar(); else updateChar();
+}
+function setComposeContext() {
+  const t = document.getElementById('compose-modal-title');
+  const n = document.getElementById('compose-context-note');
+  if (!t || !n) return;
+  if (composeReplyPostId) { t.textContent = 'Reply'; n.textContent = 'Replying to a post'; n.classList.remove('hidden'); return; }
+  if (composeQuotePostId) { t.textContent = 'Quote Repost'; n.textContent = 'Add your thoughts'; n.classList.remove('hidden'); return; }
+  t.textContent = 'New Post'; n.textContent = ''; n.classList.add('hidden');
+}
+async function createPostApi(text, files, parentId, quotePostId) {
+  if (files && files.length) {
+    const fd = new FormData(); fd.append('content', text || '');
+    if (parentId) fd.append('parentId', parentId);
+    if (quotePostId) fd.append('quotePostId', quotePostId);
+    files.forEach(function (f) { fd.append('media', f); });
+    return apiRequest('/posts', { method: 'POST', body: fd });
+  }
+  return apiRequest('/posts', { method: 'POST', body: JSON.stringify({ content: text || '', parentId: parentId || undefined, quotePostId: quotePostId || undefined }) });
+}
+postTweet = async function () {
+  const el = document.getElementById('compose-inline'); if (!el) return;
+  const text = (el.value || '').trim();
+  if (!text && !inlineMediaFiles.length) { showToast('⚠️ Write text or attach media'); return; }
+  try {
+    const r = await createPostApi(text, inlineMediaFiles, '', '');
+    if (r && r.post) feedPosts.unshift(normPost(r.post));
+    el.value = ''; inlineMediaFiles = []; renderComposerMediaPreview('inline'); updateChar(); renderFeed(); showToast('✅ Posted');
+  } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Post failed')); }
+};
+postFromModal = async function () {
+  const el = document.getElementById('compose-modal-input'); if (!el) return;
+  const text = (el.value || '').trim();
+  if (!text && !modalMediaFiles.length && !composeReplyPostId && !composeQuotePostId) { showToast('⚠️ Write text or attach media'); return; }
+  try {
+    const r = await createPostApi(text, modalMediaFiles, composeReplyPostId, composeQuotePostId);
+    if (r && r.post) feedPosts.unshift(normPost(r.post));
+    el.value = ''; modalMediaFiles = []; composeReplyPostId = ''; composeQuotePostId = '';
+    renderComposerMediaPreview('modal'); updateModalChar(); setComposeContext(); document.getElementById('compose-modal').classList.add('hidden'); renderFeed(); showToast('✅ Posted');
+  } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Post failed')); }
+};
+
+function applyPostUpdate(id, fn) {
+  feedPosts = feedPosts.map(function (p) { return String(p.id) === String(id) ? fn(normPost(p)) : p; });
+  profilePostsData = profilePostsData.map(function (p) { return String(p.id) === String(id) ? fn(normPost(p)) : p; });
+  bookmarkPostsData = bookmarkPostsData.map(function (p) { return String(p.id) === String(id) ? fn(normPost(p)) : p; });
+  renderFeed(); renderProfilePosts();
+  const b = document.getElementById('bookmark-list'); if (b) b.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>';
+}
+function findPostAny(id) { return feedPosts.concat(profilePostsData, bookmarkPostsData).find(function (p) { return String(p.id) === String(id); }) || null; }
+async function loadRepliesForPost(postId, force) {
+  const key = String(postId);
+  if (!force && Array.isArray(replyThreadByPost[key])) return;
+  replyThreadLoading[key] = true;
+  renderFeed(); renderProfilePosts();
+  const b1 = document.getElementById('bookmark-list');
+  if (b1) b1.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>';
+  try {
+    const r = await apiRequest('/posts/' + encodeURIComponent(postId) + '/replies?limit=50');
+    replyThreadByPost[key] = Array.isArray(r.replies) ? r.replies.map(normPost) : [];
+  } catch (_) {
+    replyThreadByPost[key] = Array.isArray(replyThreadByPost[key]) ? replyThreadByPost[key] : [];
+  } finally {
+    replyThreadLoading[key] = false;
+    renderFeed(); renderProfilePosts();
+    const b2 = document.getElementById('bookmark-list');
+    if (b2) b2.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>';
+  }
+}
+toggleLike = async function (id) {
+  const p = findPostAny(id); const like = !(p && p.liked);
+  try {
+    const r = await apiRequest('/posts/' + encodeURIComponent(id) + '/like', { method: like ? 'POST' : 'DELETE' });
+    applyPostUpdate(id, function (x) {
+      x.liked = !!r.liked;
+      x.likes = Number(r.likes ?? x.likes ?? 0);
+      return x;
+    });
+  } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Like failed')); }
+};
+function updateReplyDraft(id, value) { replyDraftText[String(id)] = value; }
+function cancelInlineReply() { replyDraftPostId = ''; renderFeed(); renderProfilePosts(); const b = document.getElementById('bookmark-list'); if (b) b.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>'; }
+replyToPost = function (id) {
+  const key = String(id);
+  if (String(replyDraftPostId) === key) {
+    cancelInlineReply();
+    return;
+  }
+  replyDraftPostId = key;
+  if (!replyDraftText[replyDraftPostId]) replyDraftText[replyDraftPostId] = '';
+  loadRepliesForPost(replyDraftPostId, false).catch(function () {});
+  renderFeed(); renderProfilePosts();
+  const b = document.getElementById('bookmark-list'); if (b) b.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>';
+  setTimeout(function () { const el = document.getElementById('reply-box-' + replyDraftPostId); if (el) el.focus(); }, 50);
+};
+async function submitInlineReply(id) {
+  const key = String(id);
+  const txt = String(replyDraftText[key] || '').trim();
+  if (!txt) { showToast('⚠️ Write your comment first'); return; }
+  try {
+    const r = await createPostApi(txt, [], String(id), '');
+    if (r && r.post) {
+      if (!Array.isArray(replyThreadByPost[key])) replyThreadByPost[key] = [];
+      replyThreadByPost[key].push(normPost(r.post));
+    }
+    applyPostUpdate(id, function (x) { x.replies = Number(x.replies || 0) + 1; return x; });
+    replyDraftText[key] = '';
+    replyDraftPostId = key;
+    await loadRepliesForPost(key, true);
+    renderFeed(); renderProfilePosts();
+    const b = document.getElementById('bookmark-list'); if (b) b.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>';
+    setTimeout(function () { const el = document.getElementById('reply-box-' + key); if (el) el.focus(); }, 50);
+    showToast('✅ Comment posted');
+  } catch (e) {
+    showToast('❌ ' + (e && e.message ? e.message : 'Reply failed'));
+  }
+}
+function openQuoteComposer(id) { composeQuotePostId = String(id); composeReplyPostId = ''; setComposeContext(); openComposeModal(); }
+function openRepostAction(id) {
+  repostActionPostId = String(id || '');
+  const modal = document.getElementById('repost-action-modal');
+  const btn = document.getElementById('repost-main-action-btn');
+  const post = findPostAny(id);
+  if (btn) btn.textContent = post && post.reposted ? 'Undo Repost' : 'Repost';
+  if (modal) modal.classList.remove('hidden');
+}
+function closeRepostAction(e) {
+  if (e && !e.target.classList.contains('modal-overlay')) return;
+  const modal = document.getElementById('repost-action-modal');
+  if (modal) modal.classList.add('hidden');
+  repostActionPostId = '';
+}
+async function doRepostAction(type) {
+  const id = repostActionPostId;
+  if (!id) return;
+  if (type === 'quote') {
+    closeRepostAction();
+    openQuoteComposer(id);
+    return;
+  }
+  const p = findPostAny(id); if (!p) return;
+  try {
+    if (p.reposted) {
+      const r = await apiRequest('/posts/' + encodeURIComponent(id) + '/repost', { method: 'DELETE' });
+      applyPostUpdate(id, function (x) { x.reposted = !!r.reposted; x.reposts = Number(r.reposts ?? x.reposts ?? 0); return x; });
+      showToast('Repost removed');
+    } else {
+      const r = await apiRequest('/posts/' + encodeURIComponent(id) + '/repost', { method: 'POST' });
+      applyPostUpdate(id, function (x) { x.reposted = !!r.reposted; x.reposts = Number(r.reposts ?? x.reposts ?? 0); return x; });
+      showToast('🔁 Reposted');
+    }
+  } catch (e) {
+    showToast('❌ ' + (e && e.message ? e.message : 'Repost failed'));
+  } finally {
+    closeRepostAction();
+  }
+}
+toggleRepost = function (id) { openRepostAction(id); };
+async function toggleBookmark(id) {
+  const p = findPostAny(id); const b = !(p && p.bookmarked);
+  try {
+    const r = await apiRequest('/posts/' + encodeURIComponent(id) + '/bookmark', { method: b ? 'POST' : 'DELETE' });
+    applyPostUpdate(id, function (x) { x.bookmarked = !!r.bookmarked; return x; });
+    if (!r.bookmarked) bookmarkPostsData = bookmarkPostsData.filter(function (x) { return String(x.id) !== String(id); });
+    if (r.bookmarked && p && !bookmarkPostsData.some(function (x) { return String(x.id) === String(id); })) bookmarkPostsData.unshift(Object.assign({}, p, { bookmarked: true }));
+  } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Bookmark failed')); }
+}
+async function sharePost(id) {
+  const u = window.location.origin + '/post/' + encodeURIComponent(id);
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(u); showToast('🔗 Link copied'); return; } } catch (_) {}
+  showToast('⚠️ Clipboard blocked. Share: ' + u);
+}
+async function deletePost(id) {
+  if (String(deleteConfirmPostId) !== String(id)) {
+    deleteConfirmPostId = String(id);
+    if (deleteConfirmTimer) clearTimeout(deleteConfirmTimer);
+    deleteConfirmTimer = setTimeout(function () { deleteConfirmPostId = ''; }, 4000);
+    showToast('Tap delete again to confirm');
+    return;
+  }
+  deleteConfirmPostId = '';
+  if (deleteConfirmTimer) { clearTimeout(deleteConfirmTimer); deleteConfirmTimer = null; }
+  try {
+    await apiRequest('/posts/' + encodeURIComponent(id), { method: 'DELETE' });
+    feedPosts = feedPosts.filter(function (p) { return String(p.id) !== String(id); });
+    profilePostsData = profilePostsData.filter(function (p) { return String(p.id) !== String(id); });
+    bookmarkPostsData = bookmarkPostsData.filter(function (p) { return String(p.id) !== String(id); });
+    renderFeed(); renderProfilePosts();
+    const b = document.getElementById('bookmark-list');
+    if (b) b.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>';
+    showToast('🗑️ Post deleted');
+  } catch (e) {
+    showToast('❌ ' + (e && e.message ? e.message : 'Delete failed'));
+  }
+}
+
+async function loadProfileTabData(userId, tab) {
+  const t = String(tab || 'posts');
+  const map = { posts: 'posts', replies: 'replies', likes: 'likes', media: 'media' };
+  const path = '/users/' + encodeURIComponent(userId) + '/' + (map[t] || 'posts');
+  const r = await apiRequest(path);
+  profilePostsData = Array.isArray(r.posts) ? r.posts.map(normPost) : [];
+  renderProfilePosts();
+}
+function setProfileTab(tab, el) {
+  currentProfileTab = String(tab || 'posts');
+  const tabs = document.querySelectorAll('#view-profile .feed-tabs .feed-tab');
+  tabs.forEach(function (x) { x.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  if (currentProfileData && currentProfileData.id) loadProfileTabData(currentProfileData.id, currentProfileTab).catch(function () {});
+}
+function refreshProfileMedia(profile) {
+  const p = profile || {};
+  const name = p.name || currentUser.name || 'JIS Student';
+  setAvatarVisual('profile-av-initials', initialsFromName(name), mediaUrl(p.avatarUrl || ''));
+  setBannerVisual('profile-cover', mediaUrl(p.bannerUrl || ''));
+}
+function openEditProfileModal() {
+  if (!currentProfileData || !currentProfileData.isSelf) return;
+  editProfileAvatarFile = null;
+  editProfileBannerFile = null;
+  editProfileAvatarPreview = mediaUrl(currentProfileData.avatarUrl || currentUser.avatarUrl || '');
+  editProfileBannerPreview = mediaUrl(currentProfileData.bannerUrl || currentUser.bannerUrl || '');
+  const nameInput = document.getElementById('edit-profile-name');
+  const bioInput = document.getElementById('edit-profile-bio');
+  if (nameInput) nameInput.value = currentProfileData.name || currentUser.name || '';
+  if (bioInput) bioInput.value = currentProfileData.bio || '';
+  refreshEditProfilePreview();
+  const modal = document.getElementById('edit-profile-modal');
+  if (modal) modal.classList.remove('hidden');
+}
+function closeEditProfileModal(e, force) {
+  if (editProfileSaving && !force) return;
+  if (e && !e.target.classList.contains('modal-overlay')) return;
+  const modal = document.getElementById('edit-profile-modal');
+  if (modal) modal.classList.add('hidden');
+}
+function refreshEditProfilePreview() {
+  const nameInput = document.getElementById('edit-profile-name');
+  const name = nameInput && nameInput.value ? nameInput.value : (currentProfileData && currentProfileData.name) || currentUser.name;
+  setAvatarVisual('edit-avatar-picker', initialsFromName(name), editProfileAvatarPreview);
+  setBannerVisual('edit-banner-picker', editProfileBannerPreview);
+}
+function setEditProfileImage(kind, file) {
+  if (!file) return;
+  const isImageMime = /^image\//i.test(file.type || '');
+  const isImageExt = /\.(jpg|jpeg|png|webp|gif|heic|heif)$/i.test(file.name || '');
+  if (!isImageMime && !isImageExt) {
+    showToast('⚠️ Upload image file only');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('⚠️ Max image size is 10MB');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function () {
+    const previewUrl = String(reader.result || '');
+    if (kind === 'avatar') {
+      editProfileAvatarFile = file;
+      editProfileAvatarPreview = previewUrl;
+    } else {
+      editProfileBannerFile = file;
+      editProfileBannerPreview = previewUrl;
+    }
+    refreshEditProfilePreview();
+  };
+  reader.readAsDataURL(file);
+}
+async function saveProfileEdit() {
+  if (!currentProfileData || !currentProfileData.isSelf || editProfileSaving) return;
+  const nameInput = document.getElementById('edit-profile-name');
+  const bioInput = document.getElementById('edit-profile-bio');
+  const fullName = String((nameInput && nameInput.value) || '').trim();
+  const bio = String((bioInput && bioInput.value) || '').trim();
+  if (fullName.length < 2) {
+    showToast('⚠️ Name should be at least 2 characters');
+    return;
+  }
+  const saveBtn = document.getElementById('edit-profile-save-btn');
+  editProfileSaving = true;
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+  }
+  try {
+    const base = await apiRequest('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ fullName: fullName, bio: bio })
+    });
+    let nextProfile = base.profile || currentProfileData;
+    if (editProfileAvatarFile || editProfileBannerFile) {
+      const formData = new FormData();
+      if (editProfileAvatarFile) formData.append('avatar', editProfileAvatarFile);
+      if (editProfileBannerFile) formData.append('banner', editProfileBannerFile);
+      const mediaUpdate = await apiRequest('/users/me/profile-media', {
+        method: 'PATCH',
+        body: formData
+      });
+      nextProfile = mediaUpdate.profile || nextProfile;
+    }
+    currentProfileData = Object.assign({}, currentProfileData || {}, nextProfile, { isSelf: true });
+    currentUser.name = currentProfileData.name || currentUser.name;
+    currentUser.handle = currentProfileData.handle || currentUser.handle;
+    currentUser.initials = initialsFromName(currentUser.name);
+    currentUser.avatarUrl = currentProfileData.avatarUrl || '';
+    currentUser.bannerUrl = currentProfileData.bannerUrl || '';
+    applyCurrentUserToUI();
+    refreshProfileMedia(currentProfileData);
+    closeEditProfileModal(null, true);
+    await loadProfile(currentUser.id || currentProfileData.id);
+    showToast('✅ Profile updated');
+  } catch (e) {
+    showToast('❌ ' + (e && e.message ? e.message : 'Update failed'));
+  } finally {
+    editProfileSaving = false;
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+  }
+}
+async function loadProfile(userId) {
+  const isMe = String(userId) === String((currentUser && currentUser.id) || '');
+  const p = await apiRequest(isMe ? '/users/me' : ('/users/' + encodeURIComponent(userId) + '/profile'));
+  currentProfileData = p.profile || null;
+  const pr = currentProfileData || {}; const inst = pr.institute && pr.institute.shortCode ? pr.institute.shortCode : 'JIS';
+  document.getElementById('profile-header-name').textContent = pr.name || currentUser.name;
+  document.getElementById('profile-header-post-count').textContent = String(pr.posts || 0) + ' posts';
+  document.getElementById('profile-display-name').textContent = pr.name || currentUser.name;
+  document.getElementById('profile-display-handle').innerHTML = esc(pr.handle || currentUser.handle) + ' · <span class="institute-badge">' + esc(inst) + '</span>';
+  document.getElementById('profile-bio').textContent = pr.bio || 'No bio yet.';
+  document.getElementById('profile-post-count').textContent = String(pr.posts || 0);
+  document.getElementById('profile-following-count').textContent = String(pr.following || 0);
+  document.getElementById('profile-follower-count').textContent = String(pr.followers || 0);
+  refreshProfileMedia(pr);
+  if (pr.isSelf) {
+    currentUser.name = pr.name || currentUser.name;
+    currentUser.handle = pr.handle || currentUser.handle;
+    currentUser.initials = initialsFromName(currentUser.name);
+    currentUser.institute = inst || currentUser.institute;
+    currentUser.avatarUrl = pr.avatarUrl || currentUser.avatarUrl || '';
+    currentUser.bannerUrl = pr.bannerUrl || currentUser.bannerUrl || '';
+    applyCurrentUserToUI();
+  }
+  document.getElementById('profile-action-btn').textContent = pr.isSelf ? 'Edit profile' : (pr.isFollowing ? 'Following' : 'Follow');
+  document.getElementById('profile-message-btn').classList.toggle('hidden', !!pr.isSelf);
+  const activeEl = document.getElementById('profile-tab-' + currentProfileTab) || document.getElementById('profile-tab-posts');
+  setProfileTab(currentProfileTab, activeEl);
+}
+async function openProfile(userId) { try { await loadProfile(userId); showView('profile'); } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Profile load failed')); } }
+async function handleProfileAction() {
+  if (!currentProfileData) return;
+  if (currentProfileData.isSelf) {
+    openEditProfileModal();
+    return;
+  }
+  try { const r = await apiRequest('/users/' + encodeURIComponent(currentProfileData.id) + '/follow', { method: currentProfileData.isFollowing ? 'DELETE' : 'POST' }); currentProfileData.isFollowing = !!r.following; currentProfileData.followers = Number(r.followers ?? currentProfileData.followers ?? 0); document.getElementById('profile-action-btn').textContent = currentProfileData.isFollowing ? 'Following' : 'Follow'; document.getElementById('profile-follower-count').textContent = String(currentProfileData.followers); } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Follow failed')); }
+}
+async function startChatFromProfile() { if (!currentProfileData || currentProfileData.isSelf) return; await startChatWithUser(currentProfileData.id); }
+
+async function loadBookmarks() { try { const r = await apiRequest('/users/me/bookmarks'); bookmarkPostsData = Array.isArray(r.posts) ? r.posts.map(normPost) : []; } catch (_) { bookmarkPostsData = []; } }
+async function loadNotifications(markRead) { try { const r = await apiRequest('/notifications'); const list = Array.isArray(r.notifications) ? r.notifications : []; document.getElementById('notif-list').innerHTML = list.length ? list.map(function (n) { return '<div class="notif-item"><div class="notif-icon">🔔</div><div style="flex:1;"><div class="notif-text">' + esc(n.message || 'Notification') + '</div><div class="notif-time">' + esc(n.createdAt || '') + '</div></div></div>'; }).join('') : '<div style="padding:24px;color:var(--x-muted);">No notifications yet.</div>'; const c = Number(r.unreadCount || 0); const b = document.getElementById('notif-badge'); if (b) { b.style.display = c > 0 ? 'inline-flex' : 'none'; b.textContent = c > 99 ? '99+' : String(c); } if (markRead && c > 0) await apiRequest('/notifications/read-all', { method: 'PATCH' }); } catch (_) {} }
+function renderEvents() { const e = document.getElementById('events-list'); if (!e) return; e.innerHTML = '<div class="panel-card"><div class="panel-title">Campus Events</div><div style="font-size:14px;color:var(--x-muted);line-height:1.6;">Use this tab for college event announcements and reminders.</div><button class="submit-btn" style="margin-top:12px;" onclick="showView(\'feed\');document.getElementById(\'compose-inline\').value=\'Campus event update #JIS\';updateChar();">Post Event Update</button></div>'; }
+function renderCommunitiesPage() {
+  const box = document.getElementById('community-cards');
+  if (!box) return;
+  box.innerHTML = communityCatalog.map(function (c) {
+    const joined = !!communityState[c.id];
+    return '<div class="x-card">' +
+      '<div class="x-card-title">' + esc(c.title) + '</div>' +
+      '<div class="x-card-copy">' + esc(c.about) + '</div>' +
+      '<div class="x-card-meta"><span>' + esc(c.members) + ' members</span>' +
+      '<button class="x-card-btn ' + (joined ? 'active' : '') + '" onclick="toggleCommunityJoin(\'' + esc(c.id) + '\')">' + (joined ? 'Joined' : 'Join') + '</button>' +
+      '</div></div>';
+  }).join('');
+}
+function toggleCommunityJoin(id) {
+  const key = String(id || '');
+  communityState[key] = !communityState[key];
+  renderCommunitiesPage();
+  showToast(communityState[key] ? '✅ Joined community' : 'Left community');
+}
+function renderListsPage() {
+  const box = document.getElementById('list-cards');
+  if (!box) return;
+  box.innerHTML = listCatalog.map(function (l) {
+    const following = !!listState[l.id];
+    return '<div class="x-card">' +
+      '<div class="x-card-title">' + esc(l.title) + '</div>' +
+      '<div class="x-card-copy">' + esc(l.about) + '</div>' +
+      '<div class="x-card-meta"><span>' + esc(l.owner) + ' · ' + esc(l.followers) + ' followers</span>' +
+      '<button class="x-card-btn ' + (following ? 'active' : '') + '" onclick="toggleListFollow(\'' + esc(l.id) + '\')">' + (following ? 'Following' : 'Follow List') + '</button>' +
+      '</div></div>';
+  }).join('');
+}
+function toggleListFollow(id) {
+  const key = String(id || '');
+  listState[key] = !listState[key];
+  renderListsPage();
+  showToast(listState[key] ? '📋 List followed' : 'List unfollowed');
+}
+function renderPremiumPage() {
+  const box = document.getElementById('premium-cards');
+  if (!box) return;
+  box.innerHTML = premiumCatalog.map(function (p) {
+    const active = premiumState.plan === p.id;
+    return '<div class="x-card">' +
+      '<div class="x-card-title">' + esc(p.title) + '</div>' +
+      '<div class="x-card-copy">' + esc(p.about) + '</div>' +
+      '<div class="x-card-meta"><span>' + esc(p.price) + '</span>' +
+      '<button class="x-card-btn ' + (active ? 'active' : '') + '" onclick="setPremiumPlan(\'' + esc(p.id) + '\')">' + (active ? 'Current Plan' : 'Choose Plan') + '</button>' +
+      '</div></div>';
+  }).join('');
+}
+function setPremiumPlan(id) {
+  premiumState.plan = String(id || '');
+  renderPremiumPage();
+  showToast('⭐ Premium plan updated');
+}
+
+showView = async function (view) {
+  ['feed','explore','notif','chat','profile','bookmarks','events','communities','lists','premium'].forEach(function (v) {
+    const el = document.getElementById('view-' + v); if (el) { el.classList.add('hidden'); el.style.removeProperty('display'); }
+    const nav = document.getElementById('nav-' + v); if (nav) nav.classList.remove('active');
+  });
+  const t = document.getElementById('view-' + view); if (t) { t.classList.remove('hidden'); if (view === 'chat') t.style.display = 'block'; }
+  const nav = document.getElementById('nav-' + view); if (nav) nav.classList.add('active');
+  const rp = document.getElementById('right-panel'); if (rp) rp.style.display = view === 'chat' ? 'none' : '';
+  if (view === 'feed') await loadFeedFromApi('for-you');
+  if (view === 'profile') await loadProfile((currentProfileData && currentProfileData.id) || (currentUser && currentUser.id));
+  if (view === 'notif') await loadNotifications(true);
+  if (view === 'bookmarks') { await loadBookmarks(); document.getElementById('bookmark-list').innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>'; }
+  if (view === 'events') renderEvents();
+  if (view === 'communities') renderCommunitiesPage();
+  if (view === 'lists') renderListsPage();
+  if (view === 'premium') renderPremiumPage();
+  if (view === 'chat') await loadChats();
+};
+
+openComposeModal = function () { document.getElementById('compose-modal').classList.remove('hidden'); setComposeContext(); };
+closeComposeModal = function (e) { if (!e || e.target.classList.contains('modal-overlay')) { document.getElementById('compose-modal').classList.add('hidden'); composeReplyPostId = ''; composeQuotePostId = ''; setComposeContext(); } };
+
+let chatConversations = [];
+let currentChatId = '';
+function chatIcon(v) { return initialsFromName(v || 'Chat'); }
+async function loadChats() {
+  try {
+    const r = await apiRequest('/chats');
+    chatConversations = Array.isArray(r.conversations) ? r.conversations : [];
+    const totalUnread = chatConversations.reduce(function (s, c) { return s + Number(c.unreadCount || 0); }, 0);
+    const chatBadge = document.getElementById('chat-badge'); if (chatBadge) { chatBadge.style.display = totalUnread > 0 ? 'inline-flex' : 'none'; chatBadge.textContent = totalUnread > 99 ? '99+' : String(totalUnread); }
+    const list = document.getElementById('chat-list-items');
+    if (!list) return;
+    list.innerHTML = chatConversations.length ? chatConversations.map(function (c) {
+      const active = String(c.id) === String(currentChatId) ? ' active' : '';
+      const last = c.lastMessage && c.lastMessage.content ? c.lastMessage.content : 'No messages yet';
+      const t = c.lastMessage && c.lastMessage.createdAt ? String(c.lastMessage.createdAt) : '';
+      return '<div class="chat-item' + active + '" onclick="openConversation(\'' + esc(c.id) + '\')"><div class="av-placeholder av-sm avatar" style="font-size:12px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;">' + esc(chatIcon(c.title || 'Chat')) + '</div><div class="chat-preview"><div class="chat-preview-name">' + esc(c.title || 'Chat') + '</div><div class="chat-preview-msg">' + esc(last) + '</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="chat-time">' + esc(t) + '</span>' + (c.unreadCount ? '<span class="chat-unread">' + (Number(c.unreadCount) > 9 ? '9+' : Number(c.unreadCount)) + '</span>' : '') + '</div></div>';
+    }).join('') : '<div style="padding:16px;color:var(--x-muted);">No conversations yet.</div>';
+    if (!currentChatId && chatConversations.length) await openConversation(chatConversations[0].id);
+  } catch (_) {}
+}
+function renderChatMedia(m) {
+  const u = mediaUrl(m.mediaUrl || ''); if (!u) return '';
+  const t = String(m.type || '').toUpperCase();
+  if (t === 'IMAGE') return '<div style="margin-top:8px;"><img src="' + esc(u) + '" style="max-width:220px;border-radius:12px;border:1px solid var(--x-border);"></div>';
+  if (/(mp4|webm|mov|mkv)$/i.test(u)) return '<div style="margin-top:8px;"><video controls src="' + esc(u) + '" style="max-width:220px;border-radius:12px;border:1px solid var(--x-border);"></video></div>';
+  if (/(mp3|wav|ogg|m4a|aac|flac)$/i.test(u)) return '<div style="margin-top:8px;"><audio controls src="' + esc(u) + '" style="max-width:220px;"></audio></div>';
+  return '<div style="margin-top:8px;"><a style="color:#fff;" target="_blank" href="' + esc(u) + '">📎 Open attachment</a></div>';
+}
+async function openConversation(id) {
+  currentChatId = String(id);
+  const chat = chatConversations.find(function (c) { return String(c.id) === currentChatId; }) || {};
+  document.getElementById('chat-name').textContent = chat.title || 'Chat';
+  document.getElementById('chat-sub').textContent = chat.isGroup ? 'Group conversation' : 'Direct conversation';
+  document.getElementById('chat-av').textContent = chatIcon(chat.title || 'Chat');
+  await loadChats();
+  try {
+    const r = await apiRequest('/chats/' + encodeURIComponent(id) + '/messages?limit=80');
+    const msgs = Array.isArray(r.messages) ? r.messages : [];
+    const mbox = document.getElementById('chat-messages');
+    mbox.innerHTML = msgs.length ? msgs.map(function (m) {
+      const sent = String(m.senderId) === String(currentUser.id);
+      return '<div class="msg ' + (sent ? 'sent' : 'recv') + '"><div class="msg-bubble">' + (m.content ? esc(m.content) : '') + renderChatMedia(m) + '</div><div class="msg-time">' + esc(String(m.createdAt || '')) + '</div></div>';
+    }).join('') : '<div style="color:var(--x-muted);">No messages yet.</div>';
+    mbox.scrollTop = mbox.scrollHeight;
+    await apiRequest('/chats/' + encodeURIComponent(id) + '/read', { method: 'PATCH' });
+  } catch (_) {}
+}
+async function startChatWithUser(userId) {
+  try { const r = await apiRequest('/chats', { method: 'POST', body: JSON.stringify({ participantIds: [userId], isGroup: false }) }); await showView('chat'); if (r && r.conversation && r.conversation.id) await openConversation(r.conversation.id); } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Chat failed')); }
+}
+sendChatMsg = function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMsgBtn(); } };
+sendChatMsgBtn = async function () {
+  const input = document.getElementById('chat-input-box'); const txt = (input.value || '').trim(); if (!txt) return;
+  if (!currentChatId) { showToast('⚠️ Select a chat first'); return; }
+  try { await apiRequest('/chats/' + encodeURIComponent(currentChatId) + '/messages', { method: 'POST', body: JSON.stringify({ content: txt }) }); input.value = ''; await openConversation(currentChatId); } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Message failed')); }
+};
+insertChatEmoji = function () { const i = document.getElementById('chat-input-box'); i.value += '😊'; i.focus(); };
+function uploadChatAttachment() { if (!currentChatId) { showToast('⚠️ Select a chat first'); return; } openFilePickerById('chat-attachment-input'); }
+
+async function loadSuggestions() {
+  try {
+    const r = await apiRequest('/users/suggestions?limit=6');
+    const users = Array.isArray(r.users) ? r.users : [];
+    const c = document.getElementById('who-to-follow-list'); if (!c) return;
+    c.innerHTML = users.length ? users.map(function (u) { return '<div class="suggest-item"><div class="av-placeholder av-xs avatar" style="font-size:12px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')">' + esc(initialsFromName(u.name)) + '</div><div class="user-info" style="cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')"><div class="user-name">' + esc(u.name) + (u.verified ? ' ✅' : '') + '</div><div class="user-handle">' + esc(u.handle) + ' · ' + esc(u.institute || 'JIS') + '</div></div><button class="follow-btn ' + (u.isFollowing ? 'following' : '') + '" onclick="toggleSuggestionFollow(\'' + esc(u.id) + '\',this)">' + (u.isFollowing ? 'Following' : 'Follow') + '</button></div>'; }).join('') : '<div style="color:var(--x-muted);font-size:13px;">No suggestions.</div>';
+  } catch (_) {}
+}
+async function toggleSuggestionFollow(userId, btn) {
+  const f = btn.classList.contains('following');
+  try { const r = await apiRequest('/users/' + encodeURIComponent(userId) + '/follow', { method: f ? 'DELETE' : 'POST' }); btn.classList.toggle('following', !!r.following); btn.textContent = r.following ? 'Following' : 'Follow'; } catch (_) {}
+}
+async function loadTrends() { try { const r = await apiRequest('/trends'); const t = Array.isArray(r.trends) ? r.trends : []; const h = t.map(function (x) { return '<div class="trend-item"><div class="trend-tag">Trending at JIS</div><div class="trend-name">' + esc(x.hashtag || '#CampusX') + '</div><div class="trend-posts">' + Number(x.posts || 0).toLocaleString() + ' posts</div></div>'; }).join(''); const r1 = document.getElementById('right-trend-list'); const r2 = document.getElementById('explore-trend-list'); if (r1 && h) r1.innerHTML = h; if (r2 && h) r2.innerHTML = h; } catch (_) {} }
+async function searchExplore(q) { const box = document.getElementById('explore-search-results'); if (!box) return; if (!q) { box.style.display = 'none'; box.innerHTML = ''; return; } try { const r = await apiRequest('/users/search?q=' + encodeURIComponent(q)); const users = Array.isArray(r.users) ? r.users : []; box.style.display = 'block'; box.innerHTML = users.length ? users.map(function (u) { return '<div class="suggest-item" style="border-bottom:1px solid var(--x-border);padding:10px 0;"><div class="av-placeholder av-xs avatar" style="font-size:12px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;">' + esc(initialsFromName(u.name)) + '</div><div class="user-info" style="cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')"><div class="user-name">' + esc(u.name) + (u.verified ? ' ✅' : '') + '</div><div class="user-handle">' + esc(u.handle) + ' · ' + esc(u.institute || 'JIS') + '</div></div><button class="follow-btn" onclick="startChatWithUser(\'' + esc(u.id) + '\')">Message</button></div>'; }).join('') : '<div style="color:var(--x-muted);font-size:14px;">No users found.</div>'; } catch (_) {} }
+
+const inlineMediaInput = document.getElementById('inline-media-input');
+if (inlineMediaInput && inlineMediaInput.dataset.bindFeature !== '1') { inlineMediaInput.addEventListener('change', function (e) { const fs = Array.from(e.target.files || []); fs.forEach(function (f) { if (inlineMediaFiles.length < 4) inlineMediaFiles.push(f); }); e.target.value = ''; renderComposerMediaPreview('inline'); updateChar(); }); inlineMediaInput.dataset.bindFeature = '1'; }
+const modalMediaInput = document.getElementById('modal-media-input');
+if (modalMediaInput && modalMediaInput.dataset.bindFeature !== '1') { modalMediaInput.addEventListener('change', function (e) { const fs = Array.from(e.target.files || []); fs.forEach(function (f) { if (modalMediaFiles.length < 4) modalMediaFiles.push(f); }); e.target.value = ''; renderComposerMediaPreview('modal'); updateModalChar(); }); modalMediaInput.dataset.bindFeature = '1'; }
+const chatAttachInput = document.getElementById('chat-attachment-input');
+if (chatAttachInput && chatAttachInput.dataset.bindFeature !== '1') { chatAttachInput.addEventListener('change', async function (e) { const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file || !currentChatId) return; try { const fd = new FormData(); fd.append('media', file); const up = await apiRequest('/chats/uploads', { method: 'POST', body: fd }); const txt = (document.getElementById('chat-input-box').value || '').trim(); await apiRequest('/chats/' + encodeURIComponent(currentChatId) + '/messages', { method: 'POST', body: JSON.stringify({ content: txt, mediaUrl: up.url, type: up.type }) }); document.getElementById('chat-input-box').value = ''; await openConversation(currentChatId); showToast('📎 Attachment sent'); } catch (err) { showToast('❌ ' + (err && err.message ? err.message : 'Attachment failed')); } }); chatAttachInput.dataset.bindFeature = '1'; }
+const exploreInput = document.getElementById('explore-search-input');
+if (exploreInput && exploreInput.dataset.bindFeature !== '1') { exploreInput.addEventListener('input', function () { if (exploreSearchTimer) clearTimeout(exploreSearchTimer); const q = this.value.trim(); exploreSearchTimer = setTimeout(function () { searchExplore(q); }, 250); }); exploreInput.dataset.bindFeature = '1'; }
+const rightSearch = document.getElementById('right-search-input');
+if (rightSearch && rightSearch.dataset.bindFeature !== '1') { rightSearch.addEventListener('keydown', async function (e) { if (e.key !== 'Enter') return; const q = this.value.trim(); if (!q) return; showView('explore'); const ei = document.getElementById('explore-search-input'); if (ei) ei.value = q; await searchExplore(q); }); rightSearch.dataset.bindFeature = '1'; }
+
+loadTrends(); loadSuggestions();
+loadInstitutes();
+</script>
+
+</body>
+</html>
+
+
+
+
+

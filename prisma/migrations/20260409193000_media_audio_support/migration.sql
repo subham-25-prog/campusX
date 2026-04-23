@@ -1,0 +1,6 @@
+DO $$
+BEGIN
+  ALTER TYPE "MediaType" ADD VALUE IF NOT EXISTS 'AUDIO';
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
