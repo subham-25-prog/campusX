@@ -99,6 +99,19 @@ body { background: var(--x-bg); color: var(--x-text); font-family: 'Segoe UI', s
 .action-btn.liked .icon, .action-btn.liked span { color: var(--x-red); }
 .action-btn.reposted .icon, .action-btn.reposted span { color: var(--x-green); }
 
+.reply-compose-card { margin-top: 10px; border: 1px solid var(--x-border); border-radius: 14px; background: #0a0a0a; overflow: hidden; }
+.reply-thread-wrap { max-height: 280px; overflow-y: auto; padding: 8px 10px 0; }
+.reply-compose-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 0; font-size: 12px; color: var(--x-muted); }
+.reply-compose-main { display: flex; gap: 10px; padding: 10px 12px 6px; }
+.reply-compose-input-wrap { flex: 1; min-width: 0; }
+.reply-compose-input { width: 100%; min-height: 74px; border: none; outline: none; background: transparent; color: var(--x-text); font-size: 15px; resize: vertical; font-family: inherit; line-height: 1.45; }
+.reply-compose-input::placeholder { color: var(--x-muted); }
+.reply-compose-tools { display: flex; align-items: center; gap: 4px; border-top: 1px solid #1b1f24; padding-top: 8px; margin-top: 6px; }
+.reply-compose-chip-wrap { display: none; flex-wrap: wrap; gap: 6px; padding-top: 8px; }
+.reply-compose-chip { border: 1px solid var(--x-border); border-radius: 9999px; padding: 4px 10px; font-size: 12px; color: var(--x-muted); background: #0f1318; }
+.reply-compose-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 0 12px 12px; }
+.reply-char { font-size: 12px; color: var(--x-muted); margin-right: 6px; }
+
 /* ── RIGHT PANEL ── */
 .right-panel { width: var(--right-w); flex-shrink: 0; padding: 12px 16px; }
 .search-bar { background: #202327; border: 1px solid transparent; border-radius: 9999px; display: flex; align-items: center; gap: 10px; padding: 10px 16px; margin-bottom: 16px; }
@@ -243,6 +256,9 @@ body { background: var(--x-bg); color: var(--x-text); font-family: 'Segoe UI', s
   .chat-window { height: 58vh; }
   .x-page-shell { padding: 12px; }
   .x-page-hero { padding: 14px; border-radius: 12px; }
+  .reply-compose-main { padding: 8px 10px 4px; gap: 8px; }
+  .reply-compose-head, .reply-compose-foot { padding-left: 10px; padding-right: 10px; }
+  .reply-compose-input { font-size: 14px; min-height: 66px; }
 }
 
 /* ── MODALS ── */
@@ -863,6 +879,8 @@ body { background: var(--x-bg); color: var(--x-text); font-family: 'Segoe UI', s
     </div>
   </div>
 </div>
+
+<input id="reply-media-input" type="file" accept="image/*,video/*,audio/*,.pdf" multiple class="hidden" />
 
 <!-- ════════════════════════════════════════════
      JAVASCRIPT
@@ -1590,6 +1608,8 @@ let deleteConfirmPostId = '';
 let deleteConfirmTimer = null;
 let replyDraftPostId = '';
 let replyDraftText = {};
+let replyDraftMedia = {};
+let activeReplyMediaPostId = '';
 let replyThreadByPost = {};
 let replyThreadLoading = {};
 const communityState = {};
@@ -1661,18 +1681,44 @@ function renderReplyThread(postId) {
       '</div></div>';
   }).join('');
 }
-function renderReplyBox(postId) {
-  if (String(replyDraftPostId) !== String(postId)) return '';
+function replyCharLeft(postId) {
+  const text = String(replyDraftText[postId] || '');
+  return Math.max(0, 280 - text.length);
+}
+function renderReplyMediaChips(postId) {
+  const files = Array.isArray(replyDraftMedia[String(postId)]) ? replyDraftMedia[String(postId)] : [];
+  if (!files.length) return '';
+  return files.map(function (f, idx) {
+    return '<span class="reply-compose-chip">' + esc(f.name) + ' <span style="cursor:pointer;color:var(--x-blue);" onclick="removeReplyMedia(\'' + esc(postId) + '\',' + idx + ')">✕</span></span>';
+  }).join('');
+}
+function renderReplyBox(post) {
+  const postId = String((post && post.id) || '');
+  if (String(replyDraftPostId) !== postId) return '';
   const v = esc(replyDraftText[postId] || '');
   const threadHtml = renderReplyThread(postId);
-  return '<div style="margin-top:10px;border:1px solid var(--x-border);border-radius:12px;padding:10px;background:#0a0a0a;">' +
-    '<div style="max-height:280px;overflow-y:auto;padding-right:2px;">' + threadHtml + '</div>' +
-    '<div style="height:1px;background:#1a1a1a;margin:8px 0;"></div>' +
-    '<textarea id="reply-box-' + esc(postId) + '" class="compose-input" style="min-height:66px;font-size:15px;" placeholder="Write your comment..." oninput="updateReplyDraft(\'' + esc(postId) + '\',this.value)">' + v + '</textarea>' +
-    '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">' +
-    '<button class="profile-edit-btn" style="float:none;margin-top:0;" onclick="cancelInlineReply()">Cancel</button>' +
-    '<button class="submit-btn" onclick="submitInlineReply(\'' + esc(postId) + '\')">Reply</button>' +
-    '</div></div>';
+  const replyingTo = post && post.handle ? post.handle : '@student';
+  const mediaChips = renderReplyMediaChips(postId);
+  return '<div class="reply-compose-card">' +
+    '<div class="reply-thread-wrap">' + threadHtml + '</div>' +
+    '<div class="reply-compose-head">Replying to <span style="color:var(--x-blue);">' + esc(replyingTo) + '</span></div>' +
+    '<div class="reply-compose-main">' +
+      '<div class="av-placeholder av-sm avatar" style="font-size:13px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;">' + esc(currentUser.initials || 'JS') + '</div>' +
+      '<div class="reply-compose-input-wrap">' +
+        '<textarea id="reply-box-' + esc(postId) + '" class="reply-compose-input" placeholder="Post your reply" maxlength="280" oninput="updateReplyDraft(\'' + esc(postId) + '\',this.value)">' + v + '</textarea>' +
+        '<div class="reply-compose-chip-wrap" id="reply-media-preview-' + esc(postId) + '" style="' + (mediaChips ? 'display:flex;' : 'display:none;') + '">' + mediaChips + '</div>' +
+        '<div class="reply-compose-tools">' +
+          '<button class="compose-action" title="Emoji" onclick="insertReplyEmoji(\'' + esc(postId) + '\',\'😊\')">😊</button>' +
+          '<button class="compose-action" title="Media" onclick="openReplyMediaPicker(\'' + esc(postId) + '\')">🖼️</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="reply-compose-foot">' +
+      '<span class="reply-char" id="reply-char-count-' + esc(postId) + '">' + replyCharLeft(postId) + '</span>' +
+      '<button class="profile-edit-btn" style="float:none;margin-top:0;" onclick="cancelInlineReply()">Cancel</button>' +
+      '<button class="submit-btn" onclick="submitInlineReply(\'' + esc(postId) + '\')">Reply</button>' +
+    '</div>' +
+  '</div>';
 }
 
 renderPost = function (raw) {
@@ -1698,7 +1744,7 @@ renderPost = function (raw) {
     '<button class="action-btn share" onclick="sharePost(\'' + esc(p.id) + '\')"><span class="icon">↗</span></button>' +
     deleteBtn +
     '</div>' +
-    renderReplyBox(p.id) +
+    renderReplyBox(p) +
     '</div></div>';
 };
 
@@ -1817,8 +1863,45 @@ toggleLike = async function (id) {
     });
   } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Like failed')); }
 };
-function updateReplyDraft(id, value) { replyDraftText[String(id)] = value; }
-function cancelInlineReply() { replyDraftPostId = ''; renderFeed(); renderProfilePosts(); const b = document.getElementById('bookmark-list'); if (b) b.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>'; }
+function updateReplyDraft(id, value) {
+  const key = String(id);
+  replyDraftText[key] = value;
+  const counter = document.getElementById('reply-char-count-' + key);
+  if (counter) counter.textContent = String(replyCharLeft(key));
+}
+function openReplyMediaPicker(postId) {
+  activeReplyMediaPostId = String(postId || '');
+  openFilePickerById('reply-media-input');
+}
+function removeReplyMedia(postId, idx) {
+  const key = String(postId || '');
+  const files = Array.isArray(replyDraftMedia[key]) ? replyDraftMedia[key] : [];
+  replyDraftMedia[key] = files.filter(function (_, i) { return i !== idx; });
+  renderFeed(); renderProfilePosts();
+  const b = document.getElementById('bookmark-list');
+  if (b) b.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>';
+}
+function insertReplyEmoji(postId, emoji) {
+  const key = String(postId || '');
+  const el = document.getElementById('reply-box-' + key);
+  const now = String(replyDraftText[key] || '');
+  if (now.length + String(emoji || '').length > 280) return;
+  replyDraftText[key] = now + String(emoji || '');
+  if (el) el.value = replyDraftText[key];
+  updateReplyDraft(key, replyDraftText[key]);
+  if (el) el.focus();
+}
+function cancelInlineReply() {
+  const key = String(replyDraftPostId || '');
+  if (key) {
+    replyDraftText[key] = '';
+    replyDraftMedia[key] = [];
+  }
+  replyDraftPostId = '';
+  activeReplyMediaPostId = '';
+  renderFeed(); renderProfilePosts();
+  const b = document.getElementById('bookmark-list'); if (b) b.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>';
+}
 replyToPost = function (id) {
   const key = String(id);
   if (String(replyDraftPostId) === key) {
@@ -1835,15 +1918,17 @@ replyToPost = function (id) {
 async function submitInlineReply(id) {
   const key = String(id);
   const txt = String(replyDraftText[key] || '').trim();
-  if (!txt) { showToast('⚠️ Write your comment first'); return; }
+  const files = Array.isArray(replyDraftMedia[key]) ? replyDraftMedia[key] : [];
+  if (!txt && !files.length) { showToast('⚠️ Write your reply or attach media'); return; }
   try {
-    const r = await createPostApi(txt, [], String(id), '');
+    const r = await createPostApi(txt, files, String(id), '');
     if (r && r.post) {
       if (!Array.isArray(replyThreadByPost[key])) replyThreadByPost[key] = [];
       replyThreadByPost[key].push(normPost(r.post));
     }
     applyPostUpdate(id, function (x) { x.replies = Number(x.replies || 0) + 1; return x; });
     replyDraftText[key] = '';
+    replyDraftMedia[key] = [];
     replyDraftPostId = key;
     await loadRepliesForPost(key, true);
     renderFeed(); renderProfilePosts();
@@ -2287,6 +2372,24 @@ const inlineMediaInput = document.getElementById('inline-media-input');
 if (inlineMediaInput && inlineMediaInput.dataset.bindFeature !== '1') { inlineMediaInput.addEventListener('change', function (e) { const fs = Array.from(e.target.files || []); fs.forEach(function (f) { if (inlineMediaFiles.length < 4) inlineMediaFiles.push(f); }); e.target.value = ''; renderComposerMediaPreview('inline'); updateChar(); }); inlineMediaInput.dataset.bindFeature = '1'; }
 const modalMediaInput = document.getElementById('modal-media-input');
 if (modalMediaInput && modalMediaInput.dataset.bindFeature !== '1') { modalMediaInput.addEventListener('change', function (e) { const fs = Array.from(e.target.files || []); fs.forEach(function (f) { if (modalMediaFiles.length < 4) modalMediaFiles.push(f); }); e.target.value = ''; renderComposerMediaPreview('modal'); updateModalChar(); }); modalMediaInput.dataset.bindFeature = '1'; }
+const replyMediaInput = document.getElementById('reply-media-input');
+if (replyMediaInput && replyMediaInput.dataset.bindFeature !== '1') {
+  replyMediaInput.addEventListener('change', function (e) {
+    const key = String(activeReplyMediaPostId || '');
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!key || !files.length) return;
+    if (!Array.isArray(replyDraftMedia[key])) replyDraftMedia[key] = [];
+    files.forEach(function (f) {
+      if (replyDraftMedia[key].length < 4) replyDraftMedia[key].push(f);
+    });
+    renderFeed(); renderProfilePosts();
+    const b = document.getElementById('bookmark-list');
+    if (b) b.innerHTML = bookmarkPostsData.length ? bookmarkPostsData.map(renderPost).join('') : '<div style="padding:24px;color:var(--x-muted);">No bookmarks yet.</div>';
+    setTimeout(function () { const box = document.getElementById('reply-box-' + key); if (box) box.focus(); }, 30);
+  });
+  replyMediaInput.dataset.bindFeature = '1';
+}
 const chatAttachInput = document.getElementById('chat-attachment-input');
 if (chatAttachInput && chatAttachInput.dataset.bindFeature !== '1') { chatAttachInput.addEventListener('change', async function (e) { const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file || !currentChatId) return; try { const fd = new FormData(); fd.append('media', file); const up = await apiRequest('/chats/uploads', { method: 'POST', body: fd }); const txt = (document.getElementById('chat-input-box').value || '').trim(); await apiRequest('/chats/' + encodeURIComponent(currentChatId) + '/messages', { method: 'POST', body: JSON.stringify({ content: txt, mediaUrl: up.url, type: up.type }) }); document.getElementById('chat-input-box').value = ''; await openConversation(currentChatId); showToast('📎 Attachment sent'); } catch (err) { showToast('❌ ' + (err && err.message ? err.message : 'Attachment failed')); } }); chatAttachInput.dataset.bindFeature = '1'; }
 const exploreInput = document.getElementById('explore-search-input');
