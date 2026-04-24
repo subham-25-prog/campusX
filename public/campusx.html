@@ -969,6 +969,16 @@ function setAvatarVisual(elementId, initials, imageUrl) {
   el.style.color = '#fff';
 }
 
+function avatarCircleHtml(sizeClass, initials, imageUrl, extraStyle, extraAttrs) {
+  const baseStyle = 'font-size:' + (sizeClass === 'av-xs' ? '11px' : '13px') + ';font-weight:700;border-radius:50%;' + (extraStyle || '');
+  const attrs = extraAttrs ? ' ' + extraAttrs : '';
+  const cleanUrl = mediaUrl(imageUrl || '');
+  if (cleanUrl) {
+    return '<img class="avatar ' + esc(sizeClass) + '" src="' + esc(cleanUrl) + '" alt="avatar" style="object-fit:cover;' + baseStyle + '"' + attrs + ' />';
+  }
+  return '<div class="av-placeholder ' + esc(sizeClass) + ' avatar" style="background:linear-gradient(135deg,#1d9bf0,#7856ff);' + baseStyle + '"' + attrs + '>' + esc(initials || 'JS') + '</div>';
+}
+
 function setBannerVisual(elementId, imageUrl) {
   const el = document.getElementById(elementId);
   if (!el) return;
@@ -981,6 +991,11 @@ function setBannerVisual(elementId, imageUrl) {
   }
   el.style.backgroundImage = '';
   el.style.background = 'linear-gradient(135deg, #1d9bf0 0%, #7856ff 100%)';
+}
+
+function followButtonLabel(isFollowing, followsYou) {
+  if (isFollowing) return 'Following';
+  return followsYou ? 'Follow back' : 'Follow';
 }
 
 function setAuth(accessToken, refreshToken) {
@@ -1366,7 +1381,8 @@ function addPost(txt) {
     text: txt, likes: 0, reposts: 0, replies: 0,
     liked: false, reposted: false,
     avatar: currentUser.initials,
-    avatarColor: 'linear-gradient(135deg,#1d9bf0,#7856ff)'
+    avatarColor: 'linear-gradient(135deg,#1d9bf0,#7856ff)',
+    avatarUrl: currentUser.avatarUrl || ''
   });
 }
 
@@ -1644,7 +1660,7 @@ function normPost(p) {
   return Object.assign({
     id: String(Date.now()), name: 'JIS Student', handle: '@jis_student', institute: 'JIS', instituteName: 'JIS Group',
     time: 'now', verified: false, text: '', likes: 0, reposts: 0, replies: 0, liked: false, reposted: false, bookmarked: false,
-    avatar: 'JS', avatarColor: 'linear-gradient(135deg,#1d9bf0,#7856ff)', authorId: '', media: [], quotePost: null
+    avatar: 'JS', avatarColor: 'linear-gradient(135deg,#1d9bf0,#7856ff)', avatarUrl: '', authorId: '', media: [], quotePost: null
   }, p || {});
 }
 function renderMedia(media) {
@@ -1674,7 +1690,7 @@ function renderReplyThread(postId) {
   return list.map(function (raw) {
     const c = normPost(raw);
     return '<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #141414;">' +
-      '<div class="av-placeholder av-xs avatar" style="font-size:11px;font-weight:700;background:' + esc(c.avatarColor || 'linear-gradient(135deg,#1d9bf0,#7856ff)') + ';border-radius:50%;">' + esc(c.avatar || 'JS') + '</div>' +
+      avatarCircleHtml('av-xs', c.avatar || initialsFromName(c.name), c.avatarUrl || '', '', '') +
       '<div style="flex:1;min-width:0;">' +
       '<div style="font-size:13px;"><strong>' + esc(c.name || 'Student') + '</strong> <span style="color:var(--x-muted);">' + esc(c.handle || '') + ' · ' + esc(c.time || '') + '</span></div>' +
       '<div style="font-size:14px;line-height:1.45;word-break:break-word;">' + esc(c.text || '').replace(/\n/g, '<br>') + '</div>' +
@@ -1703,7 +1719,7 @@ function renderReplyBox(post) {
     '<div class="reply-thread-wrap">' + threadHtml + '</div>' +
     '<div class="reply-compose-head">Replying to <span style="color:var(--x-blue);">' + esc(replyingTo) + '</span></div>' +
     '<div class="reply-compose-main">' +
-      '<div class="av-placeholder av-sm avatar" style="font-size:13px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;">' + esc(currentUser.initials || 'JS') + '</div>' +
+      avatarCircleHtml('av-sm', currentUser.initials || 'JS', currentUser.avatarUrl || '', '', '') +
       '<div class="reply-compose-input-wrap">' +
         '<textarea id="reply-box-' + esc(postId) + '" class="reply-compose-input" placeholder="Post your reply" maxlength="280" oninput="updateReplyDraft(\'' + esc(postId) + '\',this.value)">' + v + '</textarea>' +
         '<div class="reply-compose-chip-wrap" id="reply-media-preview-' + esc(postId) + '" style="' + (mediaChips ? 'display:flex;' : 'display:none;') + '">' + mediaChips + '</div>' +
@@ -1730,7 +1746,7 @@ renderPost = function (raw) {
     ? '<button class="action-btn" style="color:var(--x-red);" onclick="deletePost(\'' + esc(p.id) + '\')"><span class="icon">🗑️</span></button>'
     : '';
   return '<div class="post-card">' +
-    '<div class="av-placeholder av-sm avatar" style="font-size:13px;font-weight:700;background:' + esc(p.avatarColor) + ';border-radius:50%;cursor:pointer;" ' + click + '>' + esc(p.avatar) + '</div>' +
+    avatarCircleHtml('av-sm', p.avatar || initialsFromName(p.name), p.avatarUrl || '', 'cursor:pointer;', click) +
     '<div class="post-body">' +
     '<div class="post-meta"><span class="post-name" style="cursor:pointer;" ' + click + '>' + esc(p.name) + '</span>' + (p.verified ? '<span class="verified">✅</span>' : '') +
     '<span class="post-handle" style="cursor:pointer;" ' + click + '>' + esc(p.handle) + '</span><span class="institute-badge">' + esc(p.institute) + '</span><span class="post-dot">·</span><span class="post-time">' + esc(p.time) + '</span></div>' +
@@ -2167,7 +2183,7 @@ async function loadProfile(userId) {
     currentUser.bannerUrl = pr.bannerUrl || currentUser.bannerUrl || '';
     applyCurrentUserToUI();
   }
-  document.getElementById('profile-action-btn').textContent = pr.isSelf ? 'Edit profile' : (pr.isFollowing ? 'Following' : 'Follow');
+  document.getElementById('profile-action-btn').textContent = pr.isSelf ? 'Edit profile' : followButtonLabel(!!pr.isFollowing, !!pr.followsYou);
   document.getElementById('profile-message-btn').classList.toggle('hidden', !!pr.isSelf);
   const activeEl = document.getElementById('profile-tab-' + currentProfileTab) || document.getElementById('profile-tab-posts');
   setProfileTab(currentProfileTab, activeEl);
@@ -2179,7 +2195,7 @@ async function handleProfileAction() {
     openEditProfileModal();
     return;
   }
-  try { const r = await apiRequest('/users/' + encodeURIComponent(currentProfileData.id) + '/follow', { method: currentProfileData.isFollowing ? 'DELETE' : 'POST' }); currentProfileData.isFollowing = !!r.following; currentProfileData.followers = Number(r.followers ?? currentProfileData.followers ?? 0); document.getElementById('profile-action-btn').textContent = currentProfileData.isFollowing ? 'Following' : 'Follow'; document.getElementById('profile-follower-count').textContent = String(currentProfileData.followers); } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Follow failed')); }
+  try { const r = await apiRequest('/users/' + encodeURIComponent(currentProfileData.id) + '/follow', { method: currentProfileData.isFollowing ? 'DELETE' : 'POST' }); currentProfileData.isFollowing = !!r.following; currentProfileData.followsYou = !!r.followsYou; currentProfileData.followers = Number(r.followers ?? currentProfileData.followers ?? 0); document.getElementById('profile-action-btn').textContent = followButtonLabel(currentProfileData.isFollowing, currentProfileData.followsYou); document.getElementById('profile-follower-count').textContent = String(currentProfileData.followers); } catch (e) { showToast('❌ ' + (e && e.message ? e.message : 'Follow failed')); }
 }
 async function startChatFromProfile() { if (!currentProfileData || currentProfileData.isSelf) return; await startChatWithUser(currentProfileData.id); }
 
@@ -2269,12 +2285,26 @@ let chatConversations = [];
 let currentChatId = '';
 let activeChatProfileUserId = '';
 function chatIcon(v) { return initialsFromName(v || 'Chat'); }
-function getChatProfileUserId(chat) {
-  if (!chat || chat.isGroup || !Array.isArray(chat.participants) || !chat.participants.length) return '';
+function getChatDisplayParticipant(chat) {
+  if (!chat || !Array.isArray(chat.participants) || !chat.participants.length) return null;
   const meId = String((currentUser && currentUser.id) || '');
   const other = chat.participants.find(function (p) { return String(p.id || '') !== meId; });
-  if (other && other.id) return String(other.id);
-  return chat.participants[0] && chat.participants[0].id ? String(chat.participants[0].id) : '';
+  return other || chat.participants[0] || null;
+}
+function getChatProfileUserId(chat) {
+  if (!chat || chat.isGroup) return '';
+  const p = getChatDisplayParticipant(chat);
+  return p && p.id ? String(p.id) : '';
+}
+function chatAvatarData(chat) {
+  const p = getChatDisplayParticipant(chat);
+  if (p) {
+    return {
+      initials: initialsFromName(p.name || chat.title || 'Chat'),
+      imageUrl: p.avatarUrl || ''
+    };
+  }
+  return { initials: chatIcon((chat && chat.title) || 'Chat'), imageUrl: '' };
 }
 function openChatProfileFromConversation(conversationId, evt) {
   if (evt && evt.stopPropagation) evt.stopPropagation();
@@ -2308,7 +2338,8 @@ async function loadChats() {
       const profileUserId = getChatProfileUserId(c);
       const avatarOpen = profileUserId ? ' onclick="openChatProfileFromConversation(\'' + esc(c.id) + '\', event); return false;"' : '';
       const nameOpen = profileUserId ? ' onclick="openChatProfileFromConversation(\'' + esc(c.id) + '\', event); return false;"' : '';
-      return '<div class="chat-item' + active + '" onclick="openConversation(\'' + esc(c.id) + '\')"><div class="av-placeholder av-sm avatar" style="font-size:12px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;cursor:' + (profileUserId ? 'pointer' : 'default') + ';"' + avatarOpen + '>' + esc(chatIcon(c.title || 'Chat')) + '</div><div class="chat-preview"><div class="chat-preview-name" style="cursor:' + (profileUserId ? 'pointer' : 'default') + ';"' + nameOpen + '>' + esc(c.title || 'Chat') + '</div><div class="chat-preview-msg">' + esc(last) + '</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="chat-time">' + esc(t) + '</span>' + (c.unreadCount ? '<span class="chat-unread">' + (Number(c.unreadCount) > 9 ? '9+' : Number(c.unreadCount)) + '</span>' : '') + '</div></div>';
+      const av = chatAvatarData(c);
+      return '<div class="chat-item' + active + '" onclick="openConversation(\'' + esc(c.id) + '\')">' + avatarCircleHtml('av-sm', av.initials, av.imageUrl, 'cursor:' + (profileUserId ? 'pointer' : 'default') + ';font-size:12px;', avatarOpen.trim()) + '<div class="chat-preview"><div class="chat-preview-name" style="cursor:' + (profileUserId ? 'pointer' : 'default') + ';"' + nameOpen + '>' + esc(c.title || 'Chat') + '</div><div class="chat-preview-msg">' + esc(last) + '</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="chat-time">' + esc(t) + '</span>' + (c.unreadCount ? '<span class="chat-unread">' + (Number(c.unreadCount) > 9 ? '9+' : Number(c.unreadCount)) + '</span>' : '') + '</div></div>';
     }).join('') : '<div style="padding:16px;color:var(--x-muted);">No conversations yet.</div>';
     if (!currentChatId && chatConversations.length) await openConversation(chatConversations[0].id);
   } catch (_) {}
@@ -2327,7 +2358,8 @@ async function openConversation(id) {
   activeChatProfileUserId = getChatProfileUserId(chat);
   document.getElementById('chat-name').textContent = chat.title || 'Chat';
   document.getElementById('chat-sub').textContent = chat.isGroup ? 'Group conversation' : (activeChatProfileUserId ? 'Direct conversation · Tap name/avatar to open profile' : 'Direct conversation');
-  document.getElementById('chat-av').textContent = chatIcon(chat.title || 'Chat');
+  const headAv = chatAvatarData(chat);
+  setAvatarVisual('chat-av', headAv.initials, mediaUrl(headAv.imageUrl || ''));
   await loadChats();
   try {
     const r = await apiRequest('/chats/' + encodeURIComponent(id) + '/messages?limit=80');
@@ -2358,12 +2390,12 @@ async function loadSuggestions() {
     const r = await apiRequest('/users/suggestions?limit=6');
     const users = Array.isArray(r.users) ? r.users : [];
     const c = document.getElementById('who-to-follow-list'); if (!c) return;
-    c.innerHTML = users.length ? users.map(function (u) { return '<div class="suggest-item"><div class="av-placeholder av-xs avatar" style="font-size:12px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')">' + esc(initialsFromName(u.name)) + '</div><div class="user-info" style="cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')"><div class="user-name">' + esc(u.name) + (u.verified ? ' ✅' : '') + '</div><div class="user-handle">' + esc(u.handle) + ' · ' + esc(u.institute || 'JIS') + '</div></div><button class="follow-btn ' + (u.isFollowing ? 'following' : '') + '" onclick="toggleSuggestionFollow(\'' + esc(u.id) + '\',this)">' + (u.isFollowing ? 'Following' : 'Follow') + '</button></div>'; }).join('') : '<div style="color:var(--x-muted);font-size:13px;">No suggestions.</div>';
+    c.innerHTML = users.length ? users.map(function (u) { return '<div class="suggest-item">' + avatarCircleHtml('av-xs', initialsFromName(u.name), u.avatarUrl || '', 'cursor:pointer;', 'onclick="openProfile(\\'' + esc(u.id) + '\\')"') + '<div class="user-info" style="cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')"><div class="user-name">' + esc(u.name) + (u.verified ? ' ✅' : '') + '</div><div class="user-handle">' + esc(u.handle) + ' · ' + esc(u.institute || 'JIS') + '</div></div><button class="follow-btn ' + (u.isFollowing ? 'following' : '') + '" data-follows-you="' + (u.followsYou ? '1' : '0') + '" onclick="toggleSuggestionFollow(\'' + esc(u.id) + '\',this)">' + followButtonLabel(!!u.isFollowing, !!u.followsYou) + '</button></div>'; }).join('') : '<div style="color:var(--x-muted);font-size:13px;">No suggestions.</div>';
   } catch (_) {}
 }
 async function toggleSuggestionFollow(userId, btn) {
   const f = btn.classList.contains('following');
-  try { const r = await apiRequest('/users/' + encodeURIComponent(userId) + '/follow', { method: f ? 'DELETE' : 'POST' }); btn.classList.toggle('following', !!r.following); btn.textContent = r.following ? 'Following' : 'Follow'; } catch (_) {}
+  try { const r = await apiRequest('/users/' + encodeURIComponent(userId) + '/follow', { method: f ? 'DELETE' : 'POST' }); const followsYou = !!r.followsYou; btn.dataset.followsYou = followsYou ? '1' : '0'; btn.classList.toggle('following', !!r.following); btn.textContent = followButtonLabel(!!r.following, followsYou); } catch (_) {}
 }
 async function loadTrends() { try { const r = await apiRequest('/trends'); const t = Array.isArray(r.trends) ? r.trends : []; const h = t.map(function (x) { return '<div class="trend-item"><div class="trend-tag">Trending at JIS</div><div class="trend-name">' + esc(x.hashtag || '#CampusX') + '</div><div class="trend-posts">' + Number(x.posts || 0).toLocaleString() + ' posts</div></div>'; }).join(''); const r1 = document.getElementById('right-trend-list'); const r2 = document.getElementById('explore-trend-list'); if (r1 && h) r1.innerHTML = h; if (r2 && h) r2.innerHTML = h; } catch (_) {} }
 async function searchExplore(q) { const box = document.getElementById('explore-search-results'); if (!box) return; if (!q) { box.style.display = 'none'; box.innerHTML = ''; return; } try { const r = await apiRequest('/users/search?q=' + encodeURIComponent(q)); const users = Array.isArray(r.users) ? r.users : []; box.style.display = 'block'; box.innerHTML = users.length ? users.map(function (u) { return '<div class="suggest-item" style="border-bottom:1px solid var(--x-border);padding:10px 0;"><div class="av-placeholder av-xs avatar" style="font-size:12px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;">' + esc(initialsFromName(u.name)) + '</div><div class="user-info" style="cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')"><div class="user-name">' + esc(u.name) + (u.verified ? ' ✅' : '') + '</div><div class="user-handle">' + esc(u.handle) + ' · ' + esc(u.institute || 'JIS') + '</div></div><button class="follow-btn" onclick="startChatWithUser(\'' + esc(u.id) + '\')">Message</button></div>'; }).join('') : '<div style="color:var(--x-muted);font-size:14px;">No users found.</div>'; } catch (_) {} }

@@ -8,6 +8,7 @@ export const postCardInclude = (viewerId?: string) =>
         id: true,
         fullName: true,
         handle: true,
+        avatarUrl: true,
         verified: true,
         institute: {
           select: { shortCode: true, name: true }
@@ -55,6 +56,7 @@ export const postCardInclude = (viewerId?: string) =>
             id: true,
             fullName: true,
             handle: true,
+            avatarUrl: true,
             verified: true,
             institute: {
               select: { shortCode: true }
@@ -92,6 +94,7 @@ export const toPostCard = (post: any) => {
         id: post.quotePost.id,
         name: post.quotePost.author.fullName,
         handle: `@${post.quotePost.author.handle}`,
+        avatarUrl: post.quotePost.author.avatarUrl,
         verified: post.quotePost.author.verified,
         institute: post.quotePost.author.institute?.shortCode ?? "JIS",
         text: post.quotePost.content,
@@ -116,6 +119,7 @@ export const toPostCard = (post: any) => {
     bookmarked,
     avatar: initialsFromName(post.author.fullName),
     avatarColor: avatarColorForId(post.author.id),
+    avatarUrl: post.author.avatarUrl,
     authorId: post.authorId,
     createdAt: post.createdAt,
     parentId: post.parentId,

@@ -69,6 +69,7 @@ router.get(
                 id: true,
                 fullName: true,
                 handle: true,
+                avatarUrl: true,
                 verified: true,
                 institute: {
                   select: { shortCode: true }
@@ -116,6 +117,7 @@ router.get(
             id: m.user.id,
             name: m.user.fullName,
             handle: `@${m.user.handle}`,
+            avatarUrl: m.user.avatarUrl ?? "",
             institute: m.user.institute?.shortCode ?? "JIS",
             verified: m.user.verified
           })),

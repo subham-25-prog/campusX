@@ -59,7 +59,7 @@ const toProfileResponse = (
     institute: { id: string; name: string; shortCode: string } | null;
     _count: { posts: number; followers: number; following: number };
   },
-  opts: { isSelf: boolean; isFollowing: boolean }
+  opts: { isSelf: boolean; isFollowing: boolean; followsYou: boolean }
 ) => ({
   id: user.id,
   name: user.fullName,
@@ -74,6 +74,7 @@ const toProfileResponse = (
   followers: user._count.followers,
   following: user._count.following,
   isFollowing: opts.isFollowing,
+  followsYou: opts.followsYou,
   isSelf: opts.isSelf
 });
 
@@ -92,7 +93,7 @@ router.get(
     if (!me) throw new HttpError(404, "User not found");
 
     res.json({
-      profile: toProfileResponse(me, { isFollowing: false, isSelf: true })
+      profile: toProfileResponse(me, { isFollowing: false, followsYou: false, isSelf: true })
     });
   })
 );
@@ -111,7 +112,7 @@ router.patch(
     });
 
     res.json({
-      profile: toProfileResponse(updated, { isFollowing: false, isSelf: true })
+      profile: toProfileResponse(updated, { isFollowing: false, followsYou: false, isSelf: true })
     });
   })
 );
@@ -145,7 +146,7 @@ router.patch(
     });
 
     res.json({
-      profile: toProfileResponse(updated, { isFollowing: false, isSelf: true })
+      profile: toProfileResponse(updated, { isFollowing: false, followsYou: false, isSelf: true })
     });
   })
 );
@@ -168,6 +169,7 @@ router.get(
         fullName: true,
         handle: true,
         verified: true,
+        avatarUrl: true,
         institute: {
           select: { shortCode: true, name: true }
         }
@@ -180,6 +182,7 @@ router.get(
         name: user.fullName,
         handle: `@${user.handle}`,
         verified: user.verified,
+        avatarUrl: user.avatarUrl,
         institute: user.institute?.shortCode ?? "JIS",
         instituteName: user.institute?.name ?? "JIS Group"
       }))
@@ -219,11 +222,17 @@ router.get(
         fullName: true,
         handle: true,
         verified: true,
+        avatarUrl: true,
         institute: {
           select: { shortCode: true, name: true }
         },
         followers: {
           where: { followerId: req.user!.id },
+          select: { id: true },
+          take: 1
+        },
+        following: {
+          where: { followingId: req.user!.id },
           select: { id: true },
           take: 1
         }
@@ -236,9 +245,11 @@ router.get(
         name: user.fullName,
         handle: `@${user.handle}`,
         verified: user.verified,
+        avatarUrl: user.avatarUrl,
         institute: user.institute?.shortCode ?? "JIS",
         instituteName: user.institute?.name ?? "JIS Group",
-        isFollowing: user.followers.length > 0
+        isFollowing: user.followers.length > 0,
+        followsYou: user.following.length > 0
       }))
     });
   })
@@ -334,19 +345,31 @@ router.get(
 
     if (!user) throw new HttpError(404, "User not found");
 
-    const relation = await prisma.follow.findUnique({
-      where: {
-        followerId_followingId: {
-          followerId: req.user!.id,
-          followingId: user.id
-        }
-      },
-      select: { id: true }
-    });
+    const [relation, reverseRelation] = await Promise.all([
+      prisma.follow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: req.user!.id,
+            followingId: user.id
+          }
+        },
+        select: { id: true }
+      }),
+      prisma.follow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: user.id,
+            followingId: req.user!.id
+          }
+        },
+        select: { id: true }
+      })
+    ]);
 
     res.json({
       profile: toProfileResponse(user, {
         isFollowing: Boolean(relation),
+        followsYou: Boolean(reverseRelation),
         isSelf: user.id === req.user!.id
       })
     });
@@ -390,7 +413,10 @@ router.post(
     });
 
     const followers = await prisma.follow.count({ where: { followingId } });
-    res.json({ following: true, followers });
+    const followsYou = await prisma.follow.count({
+      where: { followerId: followingId, followingId: followerId }
+    });
+    res.json({ following: true, followers, followsYou: followsYou > 0 });
   })
 );
 
@@ -403,7 +429,10 @@ router.delete(
       where: { followerId, followingId }
     });
     const followers = await prisma.follow.count({ where: { followingId } });
-    res.json({ following: false, followers });
+    const followsYou = await prisma.follow.count({
+      where: { followerId: followingId, followingId: followerId }
+    });
+    res.json({ following: false, followers, followsYou: followsYou > 0 });
   })
 );
 

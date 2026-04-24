@@ -6,6 +6,7 @@ import { prisma } from "../config/prisma";
 import { requireAuth } from "../middleware/auth";
 import { inferPostMediaType, postMediaUpload } from "../middleware/upload";
 import { postCardInclude, toPostCard } from "../services/post-service";
+import { AuthUser } from "../types/auth";
 import { asyncHandler } from "../utils/async-handler";
 import { extractHashtags } from "../utils/hashtags";
 import { HttpError } from "../utils/http-error";
@@ -23,6 +24,18 @@ const idParamSchema = z.object({
 const router = Router();
 
 router.use(requireAuth);
+
+const ensureCanPublishPost = (user: AuthUser) => {
+  if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN) {
+    return;
+  }
+  if (!user.verified || user.verificationStatus !== "APPROVED") {
+    throw new HttpError(
+      403,
+      "Admin verification pending. You can explore CampusX, but posting is enabled only after approval."
+    );
+  }
+};
 
 router.get(
   "/feed",
@@ -80,6 +93,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const input = createPostSchema.parse(req.body);
     const user = req.user!;
+    ensureCanPublishPost(user);
     const mediaFiles = (Array.isArray(req.files) ? req.files : []) as Express.Multer.File[];
     const content = input.content?.trim() ?? "";
 
@@ -277,6 +291,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { id } = idParamSchema.parse(req.params);
     const user = req.user!;
+    ensureCanPublishPost(user);
     const post = await prisma.post.findFirst({
       where: { id, deletedAt: null },
       select: { id: true, authorId: true }

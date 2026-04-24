@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { VerificationStatus } from "@prisma/client";
+import { NotificationType, UserRole, VerificationStatus } from "@prisma/client";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../config/prisma";
@@ -110,6 +110,25 @@ router.post(
         handle
       }
     });
+
+    const instituteAdmins = await prisma.user.findMany({
+      where: {
+        instituteId: input.instituteId,
+        role: { in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] }
+      },
+      select: { id: true }
+    });
+
+    if (instituteAdmins.length > 0) {
+      await prisma.notification.createMany({
+        data: instituteAdmins.map((admin) => ({
+          recipientId: admin.id,
+          actorId: user.id,
+          type: NotificationType.SYSTEM,
+          message: `${user.fullName} created a new account and is awaiting verification.`
+        }))
+      });
+    }
 
     const tokens = await createSessionTokens({
       user,

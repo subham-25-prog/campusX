@@ -1,4 +1,5 @@
 import path from "node:path";
+import { NotificationType, VerificationStatus, UserRole } from "@prisma/client";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../config/prisma";
@@ -46,16 +47,51 @@ router.post(
       });
     }
 
-    const request = await prisma.verificationRequest.create({
-      data: {
-        userId: req.user!.id,
-        instituteId: input.instituteId,
-        academicYear: input.academicYear.trim(),
-        receiptNumber: input.receiptNumber.trim(),
-        transactionId: input.transactionId?.trim() || null,
-        paymentAmount: input.paymentAmount?.trim() ? input.paymentAmount.trim() : null,
-        receiptFileUrl: `/uploads/${path.basename(file.path)}`
+    const request = await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: req.user!.id },
+        data: {
+          verificationStatus: VerificationStatus.PENDING,
+          verified: false
+        }
+      });
+
+      const created = await tx.verificationRequest.create({
+        data: {
+          userId: req.user!.id,
+          instituteId: input.instituteId,
+          academicYear: input.academicYear.trim(),
+          receiptNumber: input.receiptNumber.trim(),
+          transactionId: input.transactionId?.trim() || null,
+          paymentAmount: input.paymentAmount?.trim() ? input.paymentAmount.trim() : null,
+          receiptFileUrl: `/uploads/${path.basename(file.path)}`
+        }
+      });
+
+      const instituteAdmins = await tx.user.findMany({
+        where: {
+          instituteId: input.instituteId,
+          role: { in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] }
+        },
+        select: { id: true }
+      });
+
+      if (instituteAdmins.length > 0) {
+        await tx.notification.createMany({
+          data: instituteAdmins.map((admin) => ({
+            recipientId: admin.id,
+            actorId: req.user!.id,
+            type: NotificationType.SYSTEM,
+            message: `${req.user!.fullName} submitted a new verification request.`,
+            metadata: {
+              requestId: created.id,
+              requesterId: req.user!.id
+            }
+          }))
+        });
       }
+
+      return created;
     });
 
     res.status(201).json({
@@ -85,4 +121,3 @@ router.get(
 );
 
 export default router;
-

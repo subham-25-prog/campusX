@@ -18,11 +18,18 @@ router.use(requireAuth, requireAdmin);
 
 router.get(
   "/dashboard",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
+    const isSuperAdmin = req.user!.role === "SUPER_ADMIN";
+    const scopedPendingWhere = isSuperAdmin
+      ? { status: VerificationStatus.PENDING }
+      : {
+          status: VerificationStatus.PENDING,
+          instituteId: req.user!.instituteId
+        };
     const [users, posts, pendingVerifications, conversations] = await Promise.all([
       prisma.user.count(),
       prisma.post.count({ where: { deletedAt: null, parentId: null } }),
-      prisma.verificationRequest.count({ where: { status: VerificationStatus.PENDING } }),
+      prisma.verificationRequest.count({ where: scopedPendingWhere }),
       prisma.conversation.count()
     ]);
 
@@ -40,11 +47,18 @@ router.get(
 router.get(
   "/verifications",
   asyncHandler(async (req, res) => {
+    const isSuperAdmin = req.user!.role === "SUPER_ADMIN";
     const status = req.query.status ? String(req.query.status).toUpperCase() : undefined;
-    const where =
+    const statusWhere =
       status && Object.values(VerificationStatus).includes(status as VerificationStatus)
-        ? { status: status as VerificationStatus }
+        ? ({ status: status as VerificationStatus } as const)
         : {};
+    const where = isSuperAdmin
+      ? statusWhere
+      : {
+          ...statusWhere,
+          instituteId: req.user!.instituteId
+        };
 
     const requests = await prisma.verificationRequest.findMany({
       where,
@@ -87,6 +101,9 @@ router.patch(
     });
 
     if (!request) throw new HttpError(404, "Verification request not found");
+    if (req.user!.role !== "SUPER_ADMIN" && request.instituteId !== req.user!.instituteId) {
+      throw new HttpError(403, "You can only review requests from your own institute");
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       const updatedRequest = await tx.verificationRequest.update({
@@ -131,4 +148,3 @@ router.patch(
 );
 
 export default router;
-
