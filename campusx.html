@@ -519,9 +519,9 @@ body { background: var(--x-bg); color: var(--x-text); font-family: 'Segoe UI', s
         </div>
         <div class="chat-window">
           <div class="chat-win-header">
-            <div class="av-placeholder av-sm avatar" id="chat-av" style="font-size:15px;background:linear-gradient(135deg,#f4212e,#ff6b9d);border-radius:50%;">PS</div>
+            <div class="av-placeholder av-sm avatar" id="chat-av" onclick="openActiveChatProfile()" style="font-size:15px;background:linear-gradient(135deg,#f4212e,#ff6b9d);border-radius:50%;cursor:pointer;">PS</div>
             <div>
-              <div style="font-size:16px;font-weight:700;" id="chat-name">Priya Sharma</div>
+              <div style="font-size:16px;font-weight:700;cursor:pointer;" id="chat-name" onclick="openActiveChatProfile()">Priya Sharma</div>
               <div style="font-size:13px;color:var(--x-muted);" id="chat-sub">No conversation selected</div>
             </div>
           </div>
@@ -2109,7 +2109,29 @@ closeComposeModal = function (e) { if (!e || e.target.classList.contains('modal-
 
 let chatConversations = [];
 let currentChatId = '';
+let activeChatProfileUserId = '';
 function chatIcon(v) { return initialsFromName(v || 'Chat'); }
+function getChatProfileUserId(chat) {
+  if (!chat || chat.isGroup || !Array.isArray(chat.participants)) return '';
+  const other = chat.participants.find(function (p) { return String(p.id) !== String(currentUser.id); });
+  return other && other.id ? String(other.id) : '';
+}
+function openChatProfileFromConversation(conversationId) {
+  const chat = chatConversations.find(function (c) { return String(c.id) === String(conversationId); }) || null;
+  const profileUserId = getChatProfileUserId(chat);
+  if (!profileUserId) {
+    showToast('⚠️ Profile not available for this conversation');
+    return;
+  }
+  openProfile(profileUserId);
+}
+function openActiveChatProfile() {
+  if (!activeChatProfileUserId) {
+    showToast('⚠️ Select a direct message first');
+    return;
+  }
+  openProfile(activeChatProfileUserId);
+}
 async function loadChats() {
   try {
     const r = await apiRequest('/chats');
@@ -2122,7 +2144,10 @@ async function loadChats() {
       const active = String(c.id) === String(currentChatId) ? ' active' : '';
       const last = c.lastMessage && c.lastMessage.content ? c.lastMessage.content : 'No messages yet';
       const t = c.lastMessage && c.lastMessage.createdAt ? String(c.lastMessage.createdAt) : '';
-      return '<div class="chat-item' + active + '" onclick="openConversation(\'' + esc(c.id) + '\')"><div class="av-placeholder av-sm avatar" style="font-size:12px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;">' + esc(chatIcon(c.title || 'Chat')) + '</div><div class="chat-preview"><div class="chat-preview-name">' + esc(c.title || 'Chat') + '</div><div class="chat-preview-msg">' + esc(last) + '</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="chat-time">' + esc(t) + '</span>' + (c.unreadCount ? '<span class="chat-unread">' + (Number(c.unreadCount) > 9 ? '9+' : Number(c.unreadCount)) + '</span>' : '') + '</div></div>';
+      const profileUserId = getChatProfileUserId(c);
+      const avatarOpen = profileUserId ? ' onclick="event.stopPropagation();openChatProfileFromConversation(\'' + esc(c.id) + '\')"' : '';
+      const nameOpen = profileUserId ? ' onclick="event.stopPropagation();openChatProfileFromConversation(\'' + esc(c.id) + '\')"' : '';
+      return '<div class="chat-item' + active + '" onclick="openConversation(\'' + esc(c.id) + '\')"><div class="av-placeholder av-sm avatar" style="font-size:12px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;cursor:' + (profileUserId ? 'pointer' : 'default') + ';"' + avatarOpen + '>' + esc(chatIcon(c.title || 'Chat')) + '</div><div class="chat-preview"><div class="chat-preview-name" style="cursor:' + (profileUserId ? 'pointer' : 'default') + ';"' + nameOpen + '>' + esc(c.title || 'Chat') + '</div><div class="chat-preview-msg">' + esc(last) + '</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="chat-time">' + esc(t) + '</span>' + (c.unreadCount ? '<span class="chat-unread">' + (Number(c.unreadCount) > 9 ? '9+' : Number(c.unreadCount)) + '</span>' : '') + '</div></div>';
     }).join('') : '<div style="padding:16px;color:var(--x-muted);">No conversations yet.</div>';
     if (!currentChatId && chatConversations.length) await openConversation(chatConversations[0].id);
   } catch (_) {}
@@ -2138,8 +2163,9 @@ function renderChatMedia(m) {
 async function openConversation(id) {
   currentChatId = String(id);
   const chat = chatConversations.find(function (c) { return String(c.id) === currentChatId; }) || {};
+  activeChatProfileUserId = getChatProfileUserId(chat);
   document.getElementById('chat-name').textContent = chat.title || 'Chat';
-  document.getElementById('chat-sub').textContent = chat.isGroup ? 'Group conversation' : 'Direct conversation';
+  document.getElementById('chat-sub').textContent = chat.isGroup ? 'Group conversation' : (activeChatProfileUserId ? 'Direct conversation · Tap name/avatar to open profile' : 'Direct conversation');
   document.getElementById('chat-av').textContent = chatIcon(chat.title || 'Chat');
   await loadChats();
   try {
