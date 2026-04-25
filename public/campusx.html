@@ -2390,7 +2390,13 @@ async function loadSuggestions() {
     const r = await apiRequest('/users/suggestions?limit=6');
     const users = Array.isArray(r.users) ? r.users : [];
     const c = document.getElementById('who-to-follow-list'); if (!c) return;
-    c.innerHTML = users.length ? users.map(function (u) { return '<div class="suggest-item">' + avatarCircleHtml('av-xs', initialsFromName(u.name), u.avatarUrl || '', 'cursor:pointer;', 'onclick="openProfile(\\'' + esc(u.id) + '\\')"') + '<div class="user-info" style="cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')"><div class="user-name">' + esc(u.name) + (u.verified ? ' ✅' : '') + '</div><div class="user-handle">' + esc(u.handle) + ' · ' + esc(u.institute || 'JIS') + '</div></div><button class="follow-btn ' + (u.isFollowing ? 'following' : '') + '" data-follows-you="' + (u.followsYou ? '1' : '0') + '" onclick="toggleSuggestionFollow(\'' + esc(u.id) + '\',this)">' + followButtonLabel(!!u.isFollowing, !!u.followsYou) + '</button></div>'; }).join('') : '<div style="color:var(--x-muted);font-size:13px;">No suggestions.</div>';
+    c.innerHTML = users.length ? users.map(function (u) {
+      const av = mediaUrl(u.avatarUrl || '');
+      const avatarHtml = av
+        ? '<img class="avatar av-xs" src="' + esc(av) + '" alt="avatar" style="object-fit:cover;cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')">'
+        : '<div class="av-placeholder av-xs avatar" style="font-size:12px;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#7856ff);border-radius:50%;cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')">' + esc(initialsFromName(u.name)) + '</div>';
+      return '<div class="suggest-item">' + avatarHtml + '<div class="user-info" style="cursor:pointer;" onclick="openProfile(\'' + esc(u.id) + '\')"><div class="user-name">' + esc(u.name) + (u.verified ? ' ✅' : '') + '</div><div class="user-handle">' + esc(u.handle) + ' · ' + esc(u.institute || 'JIS') + '</div></div><button class="follow-btn ' + (u.isFollowing ? 'following' : '') + '" data-follows-you="' + (u.followsYou ? '1' : '0') + '" onclick="toggleSuggestionFollow(\'' + esc(u.id) + '\',this)">' + followButtonLabel(!!u.isFollowing, !!u.followsYou) + '</button></div>';
+    }).join('') : '<div style="color:var(--x-muted);font-size:13px;">No suggestions.</div>';
   } catch (_) {}
 }
 async function toggleSuggestionFollow(userId, btn) {
